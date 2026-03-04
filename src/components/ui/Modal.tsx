@@ -9,9 +9,10 @@ interface ModalProps {
   title: string;
   children: React.ReactNode;
   className?: string;
+  maxWidth?: string;
 }
 
-export const Modal = ({ isOpen, onClose, title, children, className }: ModalProps) => {
+export const Modal = ({ isOpen, onClose, title, children, className, maxWidth = 'max-w-lg' }: ModalProps) => {
   return (
     <AnimatePresence>
       {isOpen && (
@@ -28,7 +29,8 @@ export const Modal = ({ isOpen, onClose, title, children, className }: ModalProp
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             className={cn(
-              'relative w-full max-w-lg bg-card border border-white/10 rounded-2xl shadow-2xl overflow-hidden',
+              'relative w-full bg-card border border-white/10 rounded-2xl shadow-2xl overflow-hidden',
+              maxWidth,
               className
             )}
           >

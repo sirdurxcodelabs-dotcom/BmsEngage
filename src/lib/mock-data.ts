@@ -1,25 +1,265 @@
+import { MediaAsset } from '../types/media';
+import { SocialAccount, PlatformConfig, SocialPost } from '../types/social';
+
 export const MOCK_STATS = [
-  { label: 'Total Posts', value: '1,284', change: '+12.5%', trend: 'up' },
-  { label: 'Scheduled Posts', value: '42', change: '+3.2%', trend: 'up' },
-  { label: 'Connected Accounts', value: '8', change: '0%', trend: 'neutral' },
-  { label: 'Engagement Rate', value: '4.8%', change: '+0.4%', trend: 'up' },
+  { label: 'Total Assets', value: '4,284', change: '+12.5%', trend: 'up' },
+  { label: 'Storage Used', value: '1.2 TB', change: '+3.2%', trend: 'up' },
+  { label: 'Active Variants', value: '842', change: '+8%', trend: 'up' },
+  { label: 'Team Members', value: '24', change: '0%', trend: 'neutral' },
 ];
 
-export const MOCK_MEDIA = [
-  { id: '1', type: 'photo', title: 'Summer Campaign', url: 'https://picsum.photos/seed/summer/400/300', date: '2024-03-01' },
-  { id: '2', type: 'video', title: 'Product Launch', url: 'https://picsum.photos/seed/launch/400/300', date: '2024-03-02' },
-  { id: '3', type: 'graphic', title: 'Sale Flyer', url: 'https://picsum.photos/seed/sale/400/300', date: '2024-03-03' },
-  { id: '4', type: 'photo', title: 'Team Photo', url: 'https://picsum.photos/seed/team/400/300', date: '2024-03-04' },
-  { id: '5', type: 'flyer', title: 'Event Invite', url: 'https://picsum.photos/seed/event/400/300', date: '2024-03-05' },
-  { id: '6', type: 'photo', title: 'New Arrival', url: 'https://picsum.photos/seed/new/400/300', date: '2024-03-06' },
+export const MOCK_MEDIA: MediaAsset[] = [
+  {
+    id: '1',
+    category: 'Image',
+    title: 'Summer Campaign Hero',
+    description: 'Main hero image for the 2024 summer collection campaign.',
+    url: 'https://picsum.photos/seed/summer/1200/800',
+    tags: ['summer', 'campaign', 'hero', '2024'],
+    status: 'Published',
+    visibility: 'Public',
+    uploadedBy: 'Alex Rivera',
+    metadata: {
+      width: 1200,
+      height: 800,
+      dpi: 300,
+      colorModel: 'RGB',
+      fileType: 'JPG',
+      fileSize: '2.4 MB',
+      createdDate: '2024-03-01T10:00:00Z',
+      modifiedDate: '2024-03-01T10:00:00Z',
+      mimeType: 'image/jpeg'
+    },
+    variants: [
+      {
+        id: 'v1',
+        parentAssetId: '1',
+        version: 2,
+        title: 'Compressed Web Version',
+        url: 'https://picsum.photos/seed/summer-web/800/600',
+        metadata: {
+          width: 800,
+          height: 600,
+          fileType: 'WEBP',
+          fileSize: '450 KB',
+          createdDate: '2024-03-02T14:00:00Z',
+          modifiedDate: '2024-03-02T14:00:00Z',
+          mimeType: 'image/webp'
+        }
+      }
+    ]
+  },
+  {
+    id: '2',
+    category: 'Video',
+    title: 'Product Launch Teaser',
+    description: '15-second teaser for the upcoming product launch.',
+    url: 'https://picsum.photos/seed/launch/1920/1080',
+    tags: ['launch', 'teaser', 'video', 'social'],
+    status: 'Published',
+    visibility: 'Team',
+    uploadedBy: 'Sarah Chen',
+    metadata: {
+      duration: '00:15',
+      resolution: '1080p',
+      frameRate: 30,
+      codec: 'H.264',
+      fileType: 'MP4',
+      fileSize: '45 MB',
+      bitrate: '15 Mbps',
+      audioPresence: true,
+      createdDate: '2024-03-02T11:30:00Z',
+      modifiedDate: '2024-03-02T11:30:00Z',
+      mimeType: 'video/mp4'
+    },
+    variants: []
+  },
+  {
+    id: '3',
+    category: 'Flyer',
+    title: 'Annual Sale Event',
+    description: 'Promotional flyer for the annual clearance sale.',
+    url: 'https://picsum.photos/seed/sale/1000/1414',
+    tags: ['sale', 'flyer', 'print', 'promo'],
+    status: 'Draft',
+    visibility: 'Private',
+    uploadedBy: 'Alex Rivera',
+    metadata: {
+      width: 1000,
+      height: 1414,
+      dpi: 300,
+      colorModel: 'CMYK',
+      fileType: 'PDF',
+      fileSize: '12.8 MB',
+      createdDate: '2024-03-03T09:15:00Z',
+      modifiedDate: '2024-03-03T09:15:00Z',
+      mimeType: 'application/pdf'
+    },
+    variants: []
+  },
+  {
+    id: '4',
+    category: 'Graphics',
+    title: 'Brand Logo Set',
+    description: 'Official brand logo assets in various formats.',
+    url: 'https://picsum.photos/seed/logo/800/800',
+    tags: ['brand', 'logo', 'identity', 'vector'],
+    status: 'Published',
+    visibility: 'Public',
+    uploadedBy: 'Marcus Miller',
+    metadata: {
+      width: 800,
+      height: 800,
+      fileType: 'SVG',
+      fileSize: '120 KB',
+      createdDate: '2024-03-04T15:45:00Z',
+      modifiedDate: '2024-03-04T15:45:00Z',
+      mimeType: 'image/svg+xml'
+    },
+    variants: []
+  },
+  {
+    id: '5',
+    category: 'Image',
+    title: 'Office Lifestyle 01',
+    description: 'Candid shot of the creative team in the studio.',
+    url: 'https://picsum.photos/seed/office/1200/800',
+    tags: ['lifestyle', 'office', 'team', 'culture'],
+    status: 'Published',
+    visibility: 'Team',
+    uploadedBy: 'Sarah Chen',
+    metadata: {
+      width: 1200,
+      height: 800,
+      dpi: 72,
+      colorModel: 'RGB',
+      fileType: 'PNG',
+      fileSize: '5.2 MB',
+      createdDate: '2024-03-05T12:00:00Z',
+      modifiedDate: '2024-03-05T12:00:00Z',
+      mimeType: 'image/png'
+    },
+    variants: []
+  },
+  {
+    id: '6',
+    category: 'Video',
+    title: 'Client Testimonial',
+    description: 'Interview with the CEO of our top client.',
+    url: 'https://picsum.photos/seed/interview/1920/1080',
+    tags: ['client', 'testimonial', 'interview', 'corporate'],
+    status: 'Archived',
+    visibility: 'Private',
+    uploadedBy: 'Marcus Miller',
+    metadata: {
+      duration: '02:45',
+      resolution: '4K',
+      frameRate: 24,
+      codec: 'ProRes',
+      fileType: 'MOV',
+      fileSize: '1.2 GB',
+      bitrate: '150 Mbps',
+      audioPresence: true,
+      createdDate: '2024-03-06T16:20:00Z',
+      modifiedDate: '2024-03-06T16:20:00Z',
+      mimeType: 'video/quicktime'
+    },
+    variants: []
+  }
 ];
 
-export const MOCK_ACCOUNTS = [
-  { id: '1', platform: 'Instagram', name: '@bms_agency', status: 'connected', icon: 'Instagram' },
-  { id: '2', platform: 'Facebook', name: 'BMS Creative', status: 'connected', icon: 'Facebook' },
-  { id: '3', platform: 'X', name: '@bms_media', status: 'connected', icon: 'Twitter' },
-  { id: '4', platform: 'TikTok', name: '@bms_official', status: 'disconnected', icon: 'Music2' },
-  { id: '5', platform: 'LinkedIn', name: 'BMS Agency', status: 'connected', icon: 'Linkedin' },
+export const MOCK_ACCOUNTS: SocialAccount[] = [
+  { 
+    id: '1', 
+    platform: 'Instagram', 
+    username: '@bms_agency', 
+    userId: 'inst_123', 
+    status: 'connected', 
+    connectedAt: '2024-01-15T10:00:00Z',
+    profileImage: 'https://picsum.photos/seed/user1/100/100'
+  },
+  { 
+    id: '2', 
+    platform: 'Facebook', 
+    username: 'BMS Creative', 
+    userId: 'fb_456', 
+    status: 'connected', 
+    connectedAt: '2024-01-20T14:30:00Z',
+    profileImage: 'https://picsum.photos/seed/user2/100/100'
+  },
+  { 
+    id: '3', 
+    platform: 'Twitter', 
+    username: '@bms_media', 
+    userId: 'tw_789', 
+    status: 'connected', 
+    connectedAt: '2024-02-05T09:15:00Z',
+    profileImage: 'https://picsum.photos/seed/user3/100/100'
+  },
+  { 
+    id: '4', 
+    platform: 'LinkedIn', 
+    username: 'BMS Agency', 
+    userId: 'li_012', 
+    status: 'connected', 
+    connectedAt: '2024-02-10T16:45:00Z',
+    profileImage: 'https://picsum.photos/seed/user4/100/100'
+  },
+];
+
+export const SUPPORTED_PLATFORMS: PlatformConfig[] = [
+  { id: 'Google', name: 'Google', description: 'Connect for YouTube and Google Ads management.', icon: 'Google' },
+  { id: 'Apple', name: 'Apple', description: 'Manage your Apple Business and App Store presence.', icon: 'Apple' },
+  { id: 'Instagram', name: 'Instagram', description: 'Schedule posts, reels, and stories.', icon: 'Instagram' },
+  { id: 'Facebook', name: 'Facebook', description: 'Manage pages, groups, and ad accounts.', icon: 'Facebook' },
+  { id: 'LinkedIn', name: 'LinkedIn', description: 'Professional networking and company updates.', icon: 'Linkedin' },
+  { id: 'YouTube', name: 'YouTube', description: 'Upload videos and manage your channel.', icon: 'Youtube' },
+  { id: 'TikTok', name: 'TikTok', description: 'Create and schedule short-form video content.', icon: 'Music2' },
+  { id: 'Twitter', name: 'Twitter / X', description: 'Real-time updates and community engagement.', icon: 'Twitter' },
+];
+
+export const MOCK_POSTS: SocialPost[] = [
+  {
+    id: 'p1',
+    content: 'Excited to announce our new summer collection! ☀️ Check out the full range on our website. #SummerCollection #BMSAgency',
+    mediaUrls: ['https://picsum.photos/seed/summer/1200/800'],
+    platforms: ['Instagram', 'Facebook'],
+    status: 'Published',
+    publishedDate: '2024-03-01T10:00:00Z',
+    engagement: { likes: 1284, comments: 42, shares: 15, views: 5400 }
+  },
+  {
+    id: 'p2',
+    content: 'Our product launch teaser is live! Watch the full video to see what we have been working on. 🚀',
+    mediaUrls: ['https://picsum.photos/seed/launch/1920/1080'],
+    platforms: ['Twitter', 'LinkedIn'],
+    status: 'Published',
+    publishedDate: '2024-03-02T11:30:00Z',
+    engagement: { likes: 856, comments: 24, shares: 82, views: 12000 }
+  },
+  {
+    id: 'p3',
+    content: 'Join us for our annual clearance sale! Up to 70% off on all items. Limited time only! 🛍️',
+    mediaUrls: ['https://picsum.photos/seed/sale/1000/1414'],
+    platforms: ['Instagram', 'Facebook', 'Twitter'],
+    status: 'Scheduled',
+    scheduledDate: '2024-03-10T09:00:00Z',
+  },
+  {
+    id: 'p4',
+    content: 'We are hiring! 📢 Looking for a creative designer to join our team in New York. Apply now via the link in bio.',
+    mediaUrls: ['https://picsum.photos/seed/office/1200/800'],
+    platforms: ['LinkedIn'],
+    status: 'Scheduled',
+    scheduledDate: '2024-03-15T14:30:00Z',
+  },
+  {
+    id: 'p5',
+    content: 'Behind the scenes at BMS Agency. Our creative process in action! 🎨',
+    mediaUrls: ['https://picsum.photos/seed/interview/1920/1080'],
+    platforms: ['Instagram', 'YouTube'],
+    status: 'Draft',
+  }
 ];
 
 export const MOCK_ANALYTICS_DATA = [

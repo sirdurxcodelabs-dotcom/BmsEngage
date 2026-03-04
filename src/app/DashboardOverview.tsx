@@ -41,7 +41,14 @@ export default function DashboardOverview() {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {MOCK_MEDIA.slice(0, 6).map((media) => (
-              <MediaCard key={media.id} id={media.id} type={media.type} title={media.title} url={media.url} date={media.date} />
+              <MediaCard 
+                key={media.id} 
+                id={media.id} 
+                type={media.category} 
+                title={media.title} 
+                url={media.url} 
+                date={new Date(media.metadata.createdDate).toLocaleDateString()} 
+              />
             ))}
           </div>
         </div>

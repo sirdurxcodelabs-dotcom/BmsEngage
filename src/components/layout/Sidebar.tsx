@@ -21,7 +21,7 @@ const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
   { icon: ImageIcon, label: 'Gallery', path: '/gallery' },
   { icon: Share2, label: 'Social Accounts', path: '/social-accounts' },
-  { icon: PenTool, label: 'Post Composer', path: '/composer' },
+  { icon: PenTool, label: 'Posts', path: '/posts' },
   { icon: Calendar, label: 'Scheduler', path: '/scheduler' },
   { icon: BarChart3, label: 'Analytics', path: '/analytics' },
   { icon: Settings, label: 'Settings', path: '/settings' },

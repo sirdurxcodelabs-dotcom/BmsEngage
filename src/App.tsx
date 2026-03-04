@@ -16,6 +16,7 @@ import { DashboardLayout } from './components/layout/DashboardLayout';
 import DashboardOverview from './app/DashboardOverview';
 import GalleryPage from './app/GalleryPage';
 import SocialAccountsPage from './app/SocialAccountsPage';
+import PostsPage from './app/PostsPage';
 import ComposerPage from './app/ComposerPage';
 import SchedulerPage from './app/SchedulerPage';
 import AnalyticsPage from './app/AnalyticsPage';
@@ -47,6 +48,7 @@ export default function App() {
             <Route path="/dashboard" element={<DashboardOverview />} />
             <Route path="/gallery" element={<GalleryPage />} />
             <Route path="/social-accounts" element={<SocialAccountsPage />} />
+            <Route path="/posts" element={<PostsPage />} />
             <Route path="/composer" element={<ComposerPage />} />
             <Route path="/scheduler" element={<SchedulerPage />} />
             <Route path="/analytics" element={<AnalyticsPage />} />

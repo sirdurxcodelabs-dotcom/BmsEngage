@@ -18,7 +18,7 @@ export const Header = () => {
 
   const filteredAccounts = MOCK_ACCOUNTS.filter(item => 
     item.platform.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.name.toLowerCase().includes(searchQuery.toLowerCase())
+    item.username.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const hasResults = searchQuery.length > 0 && (filteredMedia.length > 0 || filteredAccounts.length > 0);
@@ -89,7 +89,7 @@ export const Header = () => {
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-semibold truncate group-hover:text-primary transition-colors text-text">{item.title}</p>
-                              <p className="text-[10px] text-text-muted uppercase tracking-tighter">{item.type} • {item.date}</p>
+                              <p className="text-[10px] text-text-muted uppercase tracking-tighter">{item.category} • {new Date(item.metadata.createdDate).toLocaleDateString()}</p>
                             </div>
                             <ImageIcon size={14} className="text-text-muted" />
                           </Link>
@@ -114,7 +114,7 @@ export const Header = () => {
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-semibold truncate group-hover:text-primary transition-colors text-text">{item.platform}</p>
-                              <p className="text-[10px] text-text-muted">{item.name}</p>
+                              <p className="text-[10px] text-text-muted">{item.username}</p>
                             </div>
                             <div className={cn(
                               "px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider",

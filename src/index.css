@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: var(--background);
+  --color-card: var(--card);
+  --color-primary: #410179;
+  --color-primary-light: #6D28D9;
+  --color-primary-dark: #2E0154;
+  --color-secondary: #032d67;
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+}
+
+:root {
+  --background: #0E0E11;
+  --card: #16161C;
+  --border: rgba(255, 255, 255, 0.08);
+  --text: #ffffff;
+  --text-muted: rgba(255, 255, 255, 0.4);
+}
+
+.light {
+  --background: #f8f9fa;
+  --card: #ffffff;
+  --border: rgba(0, 0, 0, 0.08);
+  --text: #1a1a1a;
+  --text-muted: rgba(0, 0, 0, 0.5);
+}
+
+@layer base {
+  body {
+    @apply bg-background text-text antialiased selection:bg-primary/30 transition-colors duration-300;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+.glass {
+  @apply bg-card/80 backdrop-blur-xl border border-border;
+}
+
+.gradient-text {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary;
+}
+
+.purple-glow {
+  box-shadow: 0 0 40px -10px rgba(65, 1, 121, 0.3);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-border rounded-full hover:bg-text-muted transition-colors;
+}

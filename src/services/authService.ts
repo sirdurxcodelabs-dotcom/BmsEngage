@@ -48,6 +48,12 @@ export interface User {
   name: string;
   email: string;
   verified?: boolean;
+  isSuperAdmin?: boolean;
+  accountStatus?: 'pending' | 'active' | 'rejected' | 'suspended';
+  enabledFeatures?: {
+    gallery: boolean; socialAccounts: boolean; posts: boolean;
+    scheduler: boolean; analytics: boolean; notifications: boolean; settings: boolean;
+  };
   roles: UserRole[];
   avatar?: string | null;
   phone?: string;

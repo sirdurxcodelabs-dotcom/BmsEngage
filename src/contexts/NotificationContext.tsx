@@ -89,13 +89,16 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
+    // Clear notifications immediately when user changes (logout/login as different user)
+    setAllNotifications([]);
+
     const token = localStorage.getItem('token');
-    if (token) {
-      fetchNotifications();
-      const interval = setInterval(fetchNotifications, 15000);
-      return () => clearInterval(interval);
-    }
-  }, [fetchNotifications]);
+    if (!token || !user) return; // not logged in — don't poll
+
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 15000);
+    return () => clearInterval(interval);
+  }, [user?.id, fetchNotifications]); // re-run when user ID changes
 
   const notifications = allNotifications; // all (read + unread), sorted newest first
   const unreadNotifications = allNotifications.filter(n => !n.read);

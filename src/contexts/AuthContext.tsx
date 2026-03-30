@@ -55,7 +55,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (email: string, password: string, twoFACode?: string) => {
     const response = await authService.login({ email, password, twoFACode });
     if (response.requires2FA) return { requires2FA: true, method: response.method };
-    setUser(response.user);
+    // Fetch full profile (includes enabledFeatures, isSuperAdmin, agency, etc.)
+    try {
+      const settingsService = await import('../services/settingsService');
+      const fullUser = await settingsService.getProfile();
+      setUser(fullUser);
+      localStorage.setItem('user', JSON.stringify(fullUser));
+    } catch {
+      // Fallback to minimal login response if profile fetch fails
+      setUser(response.user);
+    }
     return {};
   };
 
@@ -65,8 +74,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = async () => {
-    await authService.logout();
+    try { await authService.logout(); } catch { /* ignore */ }
+    // Clear all local state and storage
     setUser(null);
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
   };
 
   const refreshUser = async () => {

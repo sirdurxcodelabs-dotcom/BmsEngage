@@ -49,9 +49,11 @@ export const Header = () => {
     setSwitchingContext(true);
     try {
       await switchContext(ctx);
-      // Full reload so all data (gallery, dashboard, etc.) re-fetches in the new context
-      window.location.reload();
-    } catch { setSwitchingContext(false); }
+      // Fetch fresh user profile with updated activeContext, then navigate to dashboard
+      await refreshUser();
+      navigate('/dashboard');
+    } catch { /* ignore */ }
+    finally { setSwitchingContext(false); }
   };
 
   const filteredMedia = MOCK_MEDIA.filter(item => 

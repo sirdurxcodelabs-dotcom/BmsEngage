@@ -3,24 +3,32 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   Users, CheckCircle2, XCircle, Clock, ShieldAlert, Search, RefreshCw,
   Trash2, ToggleLeft, ToggleRight, ChevronDown, ChevronUp, Shield,
+  LayoutDashboard, Image as ImageIcon, Share2, PenTool, Calendar,
+  BarChart3, Bell, Settings as SettingsIcon,
 } from 'lucide-react';
-import { Button } from '../../components/ui/Button';
 import { useToast } from '../../components/ui/Toast';
 import { cn } from '../../lib/utils';
 import * as adminService from '../../services/adminService';
 import type { AdminUser, AdminStats } from '../../services/adminService';
 
-const STATUS_CONFIG = {
-  active:    { label: 'Active',    color: 'bg-emerald-500/10 text-emerald-500', icon: CheckCircle2 },
-  pending:   { label: 'Pending',   color: 'bg-amber-500/10 text-amber-500',     icon: Clock },
-  rejected:  { label: 'Rejected',  color: 'bg-red-500/10 text-red-500',         icon: XCircle },
-  suspended: { label: 'Suspended', color: 'bg-orange-500/10 text-orange-500',   icon: ShieldAlert },
+// ── Status config ─────────────────────────────────────────────────────────────
+const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
+  active:    { label: 'Active',    color: 'bg-emerald-500/10 text-emerald-500' },
+  pending:   { label: 'Pending',   color: 'bg-amber-500/10 text-amber-500' },
+  rejected:  { label: 'Rejected',  color: 'bg-red-500/10 text-red-500' },
+  suspended: { label: 'Suspended', color: 'bg-orange-500/10 text-orange-500' },
 };
 
-const FEATURE_LABELS: Record<string, string> = {
-  gallery: 'Gallery', socialAccounts: 'Social Accounts', posts: 'Posts',
-  scheduler: 'Scheduler', analytics: 'Analytics', notifications: 'Notifications', settings: 'Settings',
-};
+// ── Nav feature items — mirrors Sidebar.tsx ───────────────────────────────────
+const NAV_FEATURES = [
+  { key: 'gallery',        label: 'Gallery',         icon: ImageIcon },
+  { key: 'socialAccounts', label: 'Social Accounts',  icon: Share2 },
+  { key: 'posts',          label: 'Posts',            icon: PenTool },
+  { key: 'scheduler',      label: 'Scheduler',        icon: Calendar },
+  { key: 'analytics',      label: 'Analytics',        icon: BarChart3 },
+  { key: 'notifications',  label: 'Notifications',    icon: Bell },
+  { key: 'settings',       label: 'Settings',         icon: SettingsIcon },
+] as const;
 
 const ROLE_LABELS: Record<string, string> = {
   graphic_designer: 'Graphic Designer', photographer: 'Photographer',
@@ -31,6 +39,47 @@ const ROLE_LABELS: Record<string, string> = {
   creative_director: 'Creative Director', head_of_production: 'Head of Production',
 };
 
+// ── Action buttons per status ─────────────────────────────────────────────────
+// pending  → Approve | Reject
+// active   → Suspend  (no reject — they're already in)
+// rejected → Approve  (reinstate)
+// suspended→ Approve  (reinstate)
+function ActionButtons({
+  user, isUpdating, onStatus,
+}: {
+  user: AdminUser;
+  isUpdating: boolean;
+  onStatus: (status: AdminUser['accountStatus']) => void;
+}) {
+  const s = user.accountStatus;
+  return (
+    <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+      {/* Approve — shown for pending, rejected, suspended */}
+      {(s === 'pending' || s === 'rejected' || s === 'suspended') && (
+        <button onClick={() => onStatus('active')} disabled={isUpdating}
+          className="px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 rounded-lg text-[10px] font-bold transition-all disabled:opacity-40">
+          Approve
+        </button>
+      )}
+      {/* Reject — only for pending */}
+      {s === 'pending' && (
+        <button onClick={() => onStatus('rejected')} disabled={isUpdating}
+          className="px-2.5 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg text-[10px] font-bold transition-all disabled:opacity-40">
+          Reject
+        </button>
+      )}
+      {/* Suspend — only for active */}
+      {s === 'active' && (
+        <button onClick={() => onStatus('suspended')} disabled={isUpdating}
+          className="px-2.5 py-1 bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 rounded-lg text-[10px] font-bold transition-all disabled:opacity-40">
+          Suspend
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
 export default function AdminDashboard() {
   const { toast } = useToast();
   const [stats, setStats] = useState<AdminStats | null>(null);
@@ -61,19 +110,21 @@ export default function AdminDashboard() {
     try {
       const updated = await adminService.updateUserStatus(id, status);
       setUsers(prev => prev.map(u => u.id === id ? { ...u, accountStatus: updated.accountStatus } : u));
-      setStats(null); // will reload on next load
       toast(`User ${status}`, 'success');
+      // Refresh stats
+      adminService.getStats().then(setStats).catch(() => {});
     } catch (err: any) {
       toast(err?.response?.data?.error || 'Failed', 'error');
     } finally { setUpdatingId(null); }
   };
 
   const handleFeatureToggle = async (id: string, feature: string, value: boolean) => {
-    setUpdatingId(id + feature);
+    const key = id + feature;
+    setUpdatingId(key);
     try {
       const updated = await adminService.updateUserFeatures(id, { [feature]: value });
       setUsers(prev => prev.map(u => u.id === id ? { ...u, enabledFeatures: updated.enabledFeatures } : u));
-    } catch { toast('Failed to update feature', 'error'); }
+    } catch { toast('Failed to update navigation', 'error'); }
     finally { setUpdatingId(null); }
   };
 
@@ -84,16 +135,17 @@ export default function AdminDashboard() {
       await adminService.deleteUser(id);
       setUsers(prev => prev.filter(u => u.id !== id));
       toast('User deleted', 'success');
+      adminService.getStats().then(setStats).catch(() => {});
     } catch { toast('Failed to delete user', 'error'); }
     finally { setUpdatingId(null); }
   };
 
   const statCards = stats ? [
-    { label: 'Total Users', value: stats.total, color: 'text-primary', bg: 'bg-primary/10' },
-    { label: 'Active', value: stats.active, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-    { label: 'Pending', value: stats.pending, color: 'text-amber-500', bg: 'bg-amber-500/10' },
-    { label: 'Rejected', value: stats.rejected, color: 'text-red-500', bg: 'bg-red-500/10' },
-    { label: 'Suspended', value: stats.suspended, color: 'text-orange-500', bg: 'bg-orange-500/10' },
+    { label: 'Total',     value: stats.total,     color: 'text-primary' },
+    { label: 'Active',    value: stats.active,    color: 'text-emerald-500' },
+    { label: 'Pending',   value: stats.pending,   color: 'text-amber-500' },
+    { label: 'Rejected',  value: stats.rejected,  color: 'text-red-500' },
+    { label: 'Suspended', value: stats.suspended, color: 'text-orange-500' },
   ] : [];
 
   return (
@@ -105,7 +157,7 @@ export default function AdminDashboard() {
             <Shield size={28} className="text-primary" />
             <h1 className="text-4xl font-black tracking-tight text-text">Admin Panel</h1>
           </div>
-          <p className="text-text-muted font-medium">Manage users, approvals, and feature access.</p>
+          <p className="text-text-muted font-medium">Manage users, approvals, and dashboard navigation access.</p>
         </div>
         <button onClick={load} className="p-2 text-text-muted hover:text-text hover:bg-white/5 rounded-xl transition-all">
           <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
@@ -116,10 +168,13 @@ export default function AdminDashboard() {
       {stats && (
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
           {statCards.map(s => (
-            <div key={s.label} className={cn('p-5 rounded-2xl border border-white/10 glass space-y-1')}>
+            <button key={s.label} onClick={() => setStatusFilter(s.label === 'Total' ? '' : s.label.toLowerCase())}
+              className={cn('p-5 rounded-2xl border border-white/10 glass space-y-1 text-left transition-all hover:border-white/20',
+                statusFilter === (s.label === 'Total' ? '' : s.label.toLowerCase()) && 'ring-2 ring-primary/40'
+              )}>
               <p className="text-xs font-black text-text-muted uppercase tracking-widest">{s.label}</p>
               <p className={cn('text-3xl font-black', s.color)}>{s.value}</p>
-            </div>
+            </button>
           ))}
         </div>
       )}
@@ -143,7 +198,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Users table */}
+      {/* Users list */}
       {loading ? (
         <div className="flex items-center justify-center py-20">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
@@ -157,15 +212,16 @@ export default function AdminDashboard() {
         <div className="space-y-3">
           <AnimatePresence initial={false}>
             {users.map(u => {
-              const sc = STATUS_CONFIG[u.accountStatus];
+              const sc = STATUS_CONFIG[u.accountStatus] ?? STATUS_CONFIG.pending;
               const isExpanded = expandedId === u.id;
               const isUpdating = updatingId === u.id;
 
               return (
                 <motion.div key={u.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                   className="glass border border-white/10 rounded-2xl overflow-hidden">
-                  {/* Row */}
-                  <div className="flex items-center gap-4 p-4">
+
+                  {/* ── User row ── */}
+                  <div className="flex items-center gap-4 p-4 flex-wrap">
                     {/* Avatar */}
                     {u.avatar ? (
                       <img src={u.avatar} alt={u.name} className="w-10 h-10 rounded-xl object-cover shrink-0" />
@@ -177,8 +233,15 @@ export default function AdminDashboard() {
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-text truncate">{u.name}</p>
-                      <p className="text-xs text-text-muted truncate">{u.email}</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-bold text-text">{u.name}</p>
+                        {!u.verified && (
+                          <span className="px-1.5 py-0.5 bg-amber-500/10 text-amber-500 text-[9px] font-black uppercase tracking-widest rounded-full">
+                            Unverified
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-text-muted">{u.email}</p>
                       <p className="text-[10px] text-text-muted capitalize mt-0.5">
                         {u.roles.map(r => ROLE_LABELS[r] || r).join(', ')}
                       </p>
@@ -189,65 +252,82 @@ export default function AdminDashboard() {
                       {sc.label}
                     </span>
 
-                    {/* Quick actions */}
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {u.accountStatus !== 'active' && (
-                        <button onClick={() => handleStatus(u.id, 'active')} disabled={isUpdating}
-                          className="px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 rounded-lg text-[10px] font-bold transition-all disabled:opacity-40">
-                          Approve
-                        </button>
-                      )}
-                      {u.accountStatus === 'active' && (
-                        <button onClick={() => handleStatus(u.id, 'suspended')} disabled={isUpdating}
-                          className="px-2.5 py-1 bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 rounded-lg text-[10px] font-bold transition-all disabled:opacity-40">
-                          Suspend
-                        </button>
-                      )}
-                      {u.accountStatus !== 'rejected' && (
-                        <button onClick={() => handleStatus(u.id, 'rejected')} disabled={isUpdating}
-                          className="px-2.5 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg text-[10px] font-bold transition-all disabled:opacity-40">
-                          Reject
-                        </button>
-                      )}
+                    {/* Actions */}
+                    <ActionButtons user={u} isUpdating={isUpdating}
+                      onStatus={(status) => handleStatus(u.id, status)} />
+
+                    {/* Delete + expand */}
+                    <div className="flex items-center gap-1 shrink-0">
                       <button onClick={() => handleDelete(u.id, u.name)} disabled={isUpdating}
-                        className="p-1.5 hover:bg-red-500/10 rounded-lg transition-colors text-text-muted hover:text-red-500">
+                        className="p-1.5 hover:bg-red-500/10 rounded-lg transition-colors text-text-muted hover:text-red-500" title="Delete user">
                         <Trash2 size={14} />
                       </button>
                       <button onClick={() => setExpandedId(isExpanded ? null : u.id)}
-                        className="p-1.5 hover:bg-white/5 rounded-lg transition-colors text-text-muted hover:text-text">
+                        className="p-1.5 hover:bg-white/5 rounded-lg transition-colors text-text-muted hover:text-text" title="Manage navigation">
                         {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                       </button>
                     </div>
                   </div>
 
-                  {/* Expanded: feature toggles */}
+                  {/* ── Expanded: Dashboard Navigation toggles ── */}
                   <AnimatePresence>
                     {isExpanded && (
                       <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                        <div className="px-4 pb-4 pt-2 border-t border-white/10">
-                          <p className="text-[10px] font-black text-text-muted uppercase tracking-widest mb-3">
-                            Feature Access
-                          </p>
+                        <div className="px-4 pb-5 pt-3 border-t border-white/10 space-y-4">
+
+                          {/* Section header */}
+                          <div className="flex items-center gap-2">
+                            <LayoutDashboard size={14} className="text-primary" />
+                            <p className="text-xs font-black text-text uppercase tracking-widest">
+                              Dashboard Navigation
+                            </p>
+                            <span className="text-[10px] text-text-muted ml-1">
+                              — toggle which sidebar items this user can see
+                            </span>
+                          </div>
+
+                          {/* Dashboard is always on — show as locked */}
+                          <div className="flex items-center justify-between px-3 py-2 rounded-xl border bg-primary/5 border-primary/20">
+                            <div className="flex items-center gap-2">
+                              <LayoutDashboard size={14} className="text-primary" />
+                              <span className="text-xs font-bold text-primary">Dashboard</span>
+                            </div>
+                            <span className="text-[10px] text-primary font-black uppercase tracking-widest">Always On</span>
+                          </div>
+
+                          {/* Toggleable nav items */}
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                            {Object.entries(u.enabledFeatures).map(([feature, enabled]) => {
-                              const key = u.id + feature;
-                              const busy = updatingId === key;
+                            {NAV_FEATURES.map(({ key, label, icon: Icon }) => {
+                              const enabled = u.enabledFeatures[key as keyof typeof u.enabledFeatures];
+                              const busy = updatingId === u.id + key;
                               return (
-                                <button key={feature} onClick={() => handleFeatureToggle(u.id, feature, !enabled)}
+                                <button key={key}
+                                  onClick={() => handleFeatureToggle(u.id, key, !enabled)}
                                   disabled={busy}
-                                  className={cn('flex items-center justify-between gap-2 px-3 py-2 rounded-xl border text-xs font-bold transition-all',
-                                    enabled ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-white/5 border-white/10 text-text-muted'
+                                  className={cn(
+                                    'flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border text-xs font-bold transition-all',
+                                    enabled
+                                      ? 'bg-primary/10 border-primary/30 text-primary hover:bg-primary/20'
+                                      : 'bg-white/5 border-white/10 text-text-muted hover:border-white/20'
                                   )}>
-                                  <span>{FEATURE_LABELS[feature] || feature}</span>
-                                  {busy ? <RefreshCw size={12} className="animate-spin" />
-                                    : enabled ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <Icon size={13} className="shrink-0" />
+                                    <span className="truncate">{label}</span>
+                                  </div>
+                                  {busy
+                                    ? <RefreshCw size={12} className="animate-spin shrink-0" />
+                                    : enabled
+                                      ? <ToggleRight size={16} className="shrink-0" />
+                                      : <ToggleLeft size={16} className="shrink-0" />}
                                 </button>
                               );
                             })}
                           </div>
-                          <p className="text-[10px] text-text-muted mt-2">
-                            Joined {new Date(u.createdAt).toLocaleDateString()} · {u.verified ? 'Email verified' : 'Email not verified'}
+
+                          <p className="text-[10px] text-text-muted">
+                            Joined {new Date(u.createdAt).toLocaleDateString()} ·{' '}
+                            {u.verified ? '✓ Email verified' : '✗ Email not verified'}
                           </p>
                         </div>
                       </motion.div>

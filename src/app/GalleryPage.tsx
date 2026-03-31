@@ -11,12 +11,14 @@ import { AssetDetailModal } from '../components/gallery/AssetDetailModal';
 import { EditAssetModal } from '../components/gallery/EditAssetModal';
 import { DeleteAssetModal } from '../components/gallery/DeleteAssetModal';
 import { ShareAssetModal } from '../components/gallery/ShareAssetModal';
+import { PresentationView } from '../components/gallery/PresentationView';
 import { useToast } from '../components/ui/Toast';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Monitor } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { usePermissions } from '../hooks/usePermissions';
 import { useAuth } from '../contexts/AuthContext';
+import { ROLE_GROUPS } from '../services/authService';
 
 const PAGE_SIZE = 12;
 const DAY_INDEX: Record<string, number> = {
@@ -80,6 +82,27 @@ export default function GalleryPage() {
   const [selectedAsset, setSelectedAsset] = useState<MediaAsset | null>(null);
   const [parentForVariant, setParentForVariant] = useState<MediaAsset | undefined>(undefined);
   const [correctionReplyTo, setCorrectionReplyTo] = useState<string | undefined>(undefined);
+  const [presentationOpen, setPresentationOpen] = useState(false);
+  const [presentationIndex, setPresentationIndex] = useState(0);
+
+  // Presentation mode: agency context + executive/production/marketing roles
+  const canPresent = isAgency && (() => {
+    const role = user?.agencyRole;
+    if (!role) return false;
+    if (role === 'owner') return true;
+    const execRoles = [...ROLE_GROUPS.executive, ...ROLE_GROUPS.production, ...ROLE_GROUPS.marketing] as string[];
+    return execRoles.includes(role);
+  })();
+
+  // Assets uploaded this week (Mon–Sun)
+  const thisWeekAssets = useMemo(() => {
+    const now = new Date();
+    const dayOfWeek = now.getDay(); // 0=Sun
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+    monday.setHours(0, 0, 0, 0);
+    return media.filter(a => new Date(a.metadata.createdDate) >= monday);
+  }, [media]);
 
   useEffect(() => { setCurrentPage(1); }, [searchQuery, activeCategory, activeFileType, activeSort, activeWeekDay, activeStartup]);
 
@@ -165,7 +188,25 @@ export default function GalleryPage() {
   };
 
   return (
-    <div className="space-y-8 pb-20">
+    <div className="space-y-4 sm:space-y-6 pb-16 sm:pb-20">
+      {/* Presentation tab button — agency + executive/production/marketing only */}
+      {canPresent && (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => { setPresentationIndex(0); setPresentationOpen(true); }}
+              disabled={thisWeekAssets.length === 0}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white font-bold text-sm shadow-lg shadow-primary/30 hover:bg-primary/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <Monitor size={16} /> Presentation Mode
+            </button>
+            {thisWeekAssets.length > 0 && (
+              <span className="text-xs text-text-muted">{thisWeekAssets.length} asset{thisWeekAssets.length !== 1 ? 's' : ''} this week</span>
+            )}
+          </div>
+        </div>
+      )}
+
       <MediaGalleryTopBar
         onSearch={setSearchQuery}
         onCategoryChange={setActiveCategory}
@@ -192,13 +233,14 @@ export default function GalleryPage() {
         </div>
       ) : pagedMedia.length > 0 ? (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             <AnimatePresence mode="popLayout">
               {pagedMedia.map((asset) => (
                 <MediaAssetCard
                   key={asset.id}
                   asset={asset}
                   currentUserId={user?.id}
+                  startup={asset.startupId ? (startups.find(s => s.id === asset.startupId) ?? null) : null}
                   onView={(a) => { setSelectedAsset(a); setIsDetailOpen(true); }}
                   onEdit={(a) => { setSelectedAsset(a); setIsEditOpen(true); }}
                   onAddVariant={(a) => { setCorrectionReplyTo(undefined); setParentForVariant(a); setIsUploadOpen(true); }}
@@ -312,6 +354,17 @@ export default function GalleryPage() {
           setSelectedAsset(updated);
         }}
       />
+
+      {/* Presentation mode — full-screen overlay */}
+      {presentationOpen && thisWeekAssets.length > 0 && (
+        <PresentationView
+          assets={thisWeekAssets}
+          initialIndex={presentationIndex}
+          onClose={() => setPresentationOpen(false)}
+          onAssetUpdate={(updated) => setMedia(prev => prev.map(m => m.id === updated.id ? updated : m))}
+          startups={startups.map(s => ({ id: s.id, name: s.name, logo: s.logo ?? null }))}
+        />
+      )}
     </div>
   );
 }

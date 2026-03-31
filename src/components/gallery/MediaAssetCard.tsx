@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { MoreVertical, Plus, Eye, Edit2, Trash2, FileText, Image as ImageIcon, Film, Layers, Calendar, Share2, AlertCircle, Clock, Reply } from 'lucide-react';
+import { MoreVertical, Plus, Eye, Edit2, Trash2, FileText, Image as ImageIcon, Film, Layers, Calendar, Share2, AlertCircle, Clock, Reply, Building2 } from 'lucide-react';
 import { MediaAsset } from '../../types/media';
 import { cn } from '../../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
@@ -18,11 +18,12 @@ interface MediaAssetCardProps {
   onShare: (asset: MediaAsset) => void;
   onAcceptDelete: (asset: MediaAsset) => void;
   key?: any;
+  startup?: { id: string; name: string; logo: string | null } | null;
 }
 
 export const MediaAssetCard = ({
   asset, currentUserId, onView, onEdit, onAddVariant, onAddVariantForCorrection,
-  onDelete, onShare, onAcceptDelete,
+  onDelete, onShare, onAcceptDelete, startup,
 }: MediaAssetCardProps) => {
   const [showMenu, setShowMenu] = React.useState(false);
   const menuRef = React.useRef<HTMLDivElement>(null);
@@ -144,6 +145,17 @@ export const MediaAssetCard = ({
         <div className={cn("absolute top-3 right-3 px-2.5 py-1 rounded-lg backdrop-blur-md text-[10px] font-bold uppercase tracking-wider border border-white/5", getStatusColor())}>
           {asset.status}
         </div>
+
+        {/* Startup badge — bottom left of thumbnail */}
+        {startup && (
+          <div className="absolute bottom-3 left-3 flex items-center gap-1.5 px-2 py-1 rounded-lg bg-black/60 backdrop-blur-md border border-white/10 max-w-[70%]">
+            {startup.logo
+              ? <img src={startup.logo} alt={startup.name} className="w-4 h-4 rounded-sm object-cover shrink-0" />
+              : <Building2 size={11} className="text-white/70 shrink-0" />
+            }
+            <span className="text-[9px] font-bold text-white/80 truncate">{startup.name}</span>
+          </div>
+        )}
       </div>
 
       {/* Content */}

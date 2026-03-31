@@ -19,6 +19,37 @@ interface UploadMediaModalProps {
   startups?: Startup[];
 }
 
+const VIDEO_MAX_BYTES = 2 * 1024 * 1024 * 1024; // 2 GB
+const IMAGE_MAX_BYTES = 100 * 1024 * 1024;       // 100 MB
+
+// Extensions we accept — used for validation since MIME types are unreliable for design files
+const ALLOWED_EXTENSIONS = new Set([
+  // Images
+  'jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'tiff', 'tif', 'avif', 'heic', 'heif', 'ico',
+  // Design / graphics
+  'psd', 'psb', 'ai', 'eps', 'indd', 'indt', 'xd', 'sketch', 'fig', 'afdesign', 'afphoto',
+  'cdr', 'xcf', 'raw', 'cr2', 'nef', 'arw', 'dng',
+  // Documents
+  'pdf',
+  // Video
+  'mp4', 'mov', 'avi', 'mkv', 'webm', 'mpeg', 'mpg', '3gp', 'flv', 'wmv', 'ogv', 'm4v', 'ts',
+]);
+
+const VIDEO_EXTENSIONS = new Set(['mp4', 'mov', 'avi', 'mkv', 'webm', 'mpeg', 'mpg', '3gp', 'flv', 'wmv', 'ogv', 'm4v', 'ts']);
+
+const getExt = (filename: string) => filename.split('.').pop()?.toLowerCase() ?? '';
+
+// accept string for <input> — covers all types; extension validation is done in addFiles
+const ACCEPTED_INPUT = [
+  'image/*',
+  'video/*',
+  'application/pdf',
+  '.psd', '.psb', '.ai', '.eps', '.indd', '.xd', '.sketch', '.fig',
+  '.afdesign', '.afphoto', '.cdr', '.xcf',
+  '.raw', '.cr2', '.nef', '.arw', '.dng',
+  '.tiff', '.tif', '.heic', '.heif', '.avif', '.ico',
+].join(',');
+
 export const UploadMediaModal = ({ isOpen, onClose, onUpload, parentAsset, correctionReplyTo, startups = [] }: UploadMediaModalProps) => {
   const [files, setFiles] = React.useState<File[]>([]);
   const [isDragging, setIsDragging] = React.useState(false);
@@ -59,15 +90,38 @@ export const UploadMediaModal = ({ isOpen, onClose, onUpload, parentAsset, corre
     }
   }, [isOpen, parentAsset]);
 
+  const validateFile = (file: File): string | null => {
+    const ext = getExt(file.name);
+    if (!ALLOWED_EXTENSIONS.has(ext)) {
+      return `"${file.name}" — unsupported format (.${ext || 'unknown'}).`;
+    }
+    const isVideo = VIDEO_EXTENSIONS.has(ext);
+    const maxBytes = isVideo ? VIDEO_MAX_BYTES : IMAGE_MAX_BYTES;
+    if (file.size > maxBytes) {
+      const maxLabel = isVideo ? '2 GB' : '100 MB';
+      return `"${file.name}" exceeds the ${maxLabel} limit.`;
+    }
+    return null;
+  };
+
   const addFiles = (incoming: FileList | null) => {
     if (!incoming) return;
     const arr = Array.from(incoming);
+    const errors: string[] = [];
+    const valid = arr.filter(f => {
+      const err = validateFile(f);
+      if (err) { errors.push(err); return false; }
+      return true;
+    });
+    errors.forEach(e => toast(e, 'error'));
+    if (valid.length === 0) return;
+
     if (parentAsset) {
-      setFiles([arr[0]]);
+      setFiles([valid[0]]);
     } else {
       setFiles((prev) => {
         const existing = new Set(prev.map((f) => f.name + f.size));
-        return [...prev, ...arr.filter((f) => !existing.has(f.name + f.size))];
+        return [...prev, ...valid.filter((f) => !existing.has(f.name + f.size))];
       });
     }
   };
@@ -160,9 +214,9 @@ export const UploadMediaModal = ({ isOpen, onClose, onUpload, parentAsset, corre
             </div>
             <div className="text-center">
               <p className="text-lg font-bold text-text mb-1">Click or drag file to upload</p>
-              <p className="text-sm text-text-muted">Support for all creative formats (Images, Videos, PDFs, etc.)</p>
+              <p className="text-sm text-text-muted">Images, videos (up to 2 GB), PDFs, PSD, AI, EPS, RAW and more</p>
             </div>
-            <input type="file" multiple={!parentAsset} className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleFileChange} />
+            <input type="file" multiple={!parentAsset} accept={ACCEPTED_INPUT} className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleFileChange} />
           </div>
         )}
 
@@ -228,7 +282,7 @@ export const UploadMediaModal = ({ isOpen, onClose, onUpload, parentAsset, corre
                 {!parentAsset && (
                   <label className="relative cursor-pointer text-xs font-bold text-primary hover:underline">
                     + Add more
-                    <input type="file" multiple className="absolute inset-0 opacity-0 w-0 h-0" onChange={handleFileChange} />
+                    <input type="file" multiple accept={ACCEPTED_INPUT} className="absolute inset-0 opacity-0 w-0 h-0" onChange={handleFileChange} />
                   </label>
                 )}
                 <button type="button" onClick={() => setFiles([])} className="text-xs font-bold text-red-400 hover:text-red-500 transition-colors">
@@ -240,7 +294,7 @@ export const UploadMediaModal = ({ isOpen, onClose, onUpload, parentAsset, corre
         )}
 
         {/* Form Fields */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
           <Input label="Title" placeholder="e.g. Summer Campaign Hero" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Category</label>
@@ -252,7 +306,7 @@ export const UploadMediaModal = ({ isOpen, onClose, onUpload, parentAsset, corre
             </select>
           </div>
           <Input label="Tags" placeholder="summer, campaign, 2024 (comma separated)" value={formData.tags} onChange={(e) => setFormData({ ...formData, tags: e.target.value })} />
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Status</label>
               <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value as MediaStatus })} className="w-full h-12 bg-background border border-border rounded-xl px-4 text-sm text-text outline-none focus:border-primary/50 transition-all">

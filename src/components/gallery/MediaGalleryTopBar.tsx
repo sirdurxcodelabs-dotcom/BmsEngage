@@ -47,13 +47,13 @@ export const MediaGalleryTopBar = ({
     activeStartup !== 'All';
 
   return (
-    <div className="flex flex-col gap-6 mb-10">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+    <div className="flex flex-col gap-4 sm:gap-6 mb-6 sm:mb-10">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-black tracking-tight text-text mb-2">Media Gallery</h1>
-          <p className="text-text-muted font-medium">Manage and organize your agency's creative assets.</p>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-text mb-1 sm:mb-2">Media Gallery</h1>
+          <p className="text-sm text-text-muted font-medium">Manage and organize your agency's creative assets.</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <AnimatePresence>
             {hasActiveFilters && (
               <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
@@ -76,14 +76,14 @@ export const MediaGalleryTopBar = ({
         </div>
       </div>
 
-      {/* Category Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+      {/* Category Tabs — horizontal scroll on mobile */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
         {categories.map((cat) => (
           <button
             key={cat}
             onClick={() => onCategoryChange(cat)}
             className={cn(
-              'shrink-0 px-5 py-2 rounded-xl text-sm font-bold transition-all',
+              'shrink-0 px-3 sm:px-5 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all',
               activeCategory === cat
                 ? 'bg-primary text-white shadow-lg shadow-primary/30'
                 : 'bg-card border border-border text-text-muted hover:text-text hover:border-primary/30'
@@ -94,27 +94,27 @@ export const MediaGalleryTopBar = ({
         ))}
       </div>
 
-      {/* Week Day Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+      {/* Week Day Tabs — horizontal scroll on mobile */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
         <span className="shrink-0 text-[10px] font-black text-text-muted uppercase tracking-widest mr-1">Week:</span>
         {WEEK_DAYS.map((day) => (
           <button
             key={day}
             onClick={() => onWeekDayChange(day)}
             className={cn(
-              'shrink-0 px-4 py-1.5 rounded-lg text-xs font-bold transition-all',
+              'shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold transition-all',
               activeWeekDay === day
                 ? 'bg-primary/20 text-primary border border-primary/40'
                 : 'bg-card border border-border text-text-muted hover:text-text hover:border-primary/20'
             )}
           >
-            {day === 'All' ? 'All Days' : day.slice(0, 3)}
+            {day === 'All' ? 'All' : day.slice(0, 3)}
           </button>
         ))}
       </div>
 
       {/* Filter Row */}
-      <div className={cn('grid grid-cols-1 md:grid-cols-2 gap-4', isAgencyContext && startups.length > 0 ? 'lg:grid-cols-4' : 'lg:grid-cols-3')}>
+      <div className={cn('grid grid-cols-1 sm:grid-cols-2 gap-3', isAgencyContext && startups.length > 0 ? 'lg:grid-cols-4' : 'lg:grid-cols-3')}>
         {/* Search */}
         <div className="relative group">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-primary transition-colors" size={18} />

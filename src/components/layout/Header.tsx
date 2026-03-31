@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, Bell, User, Image as ImageIcon, Calendar, BarChart3, Link2, X, Sun, Moon, LogOut, Building2, ChevronDown, RefreshCw } from 'lucide-react';
+import { Search, Bell, User, Image as ImageIcon, Calendar, BarChart3, Link2, X, Sun, Moon, LogOut, Building2, ChevronDown, RefreshCw, Menu } from 'lucide-react';
 import { MOCK_MEDIA, MOCK_ACCOUNTS } from '../../lib/mock-data';
 import { cn } from '../../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
@@ -11,7 +11,7 @@ import { useNotifications } from '../../contexts/NotificationContext';
 import { NotificationPanel } from '../notifications/NotificationPanel';
 import { switchContext } from '../../services/settingsService';
 
-export const Header = () => {
+export const Header = ({ onMobileMenuClick }: { onMobileMenuClick?: () => void }) => {
   const { theme, toggleTheme } = useTheme();
   const { user, logout, refreshUser } = useAuth();
   const { unreadCount } = useNotifications();
@@ -90,8 +90,17 @@ export const Header = () => {
   };
 
   return (
-    <header className="h-16 border-b border-border bg-background/50 backdrop-blur-md sticky top-0 z-30 px-8 flex items-center justify-between">
-      <div className="w-96 relative" ref={searchRef}>
+    <header className="h-14 sm:h-16 border-b border-border bg-background/50 backdrop-blur-md sticky top-0 z-30 px-3 sm:px-6 lg:px-8 flex items-center justify-between gap-3">
+      {/* Mobile hamburger */}
+      <button
+        onClick={onMobileMenuClick}
+        className="lg:hidden p-2 rounded-xl text-text-muted hover:text-text hover:bg-primary/5 transition-all shrink-0"
+        aria-label="Open menu"
+      >
+        <Menu size={20} />
+      </button>
+
+      <div className="flex-1 max-w-xs sm:max-w-sm lg:max-w-md relative" ref={searchRef}>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={18} />
           <input 
@@ -196,7 +205,7 @@ export const Header = () => {
         </AnimatePresence>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         {/* Agency / Personal context switcher */}
         {hasAgency && (
           <div className="hidden md:flex items-center gap-1 bg-white/5 border border-white/10 rounded-xl p-1">
@@ -226,7 +235,7 @@ export const Header = () => {
 
         <button
           onClick={toggleTheme}
-          className="p-2 text-text-muted hover:text-text hover:bg-primary/5 rounded-xl transition-all"
+          className="hidden sm:flex p-2 text-text-muted hover:text-text hover:bg-primary/5 rounded-xl transition-all"
         >
           {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
         </button>
@@ -243,7 +252,7 @@ export const Header = () => {
           )}
         </button>
 
-        <div className="flex items-center gap-3 pl-4 border-l border-border relative" ref={userMenuRef}>
+        <div className="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-4 border-l border-border relative" ref={userMenuRef}>
           <div className="text-right hidden sm:block">
             <p className="text-sm font-medium text-text">{user?.name || 'User'}</p>
             <p className="text-xs text-text-muted uppercase tracking-tighter">

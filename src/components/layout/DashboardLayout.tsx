@@ -3,19 +3,21 @@ import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { motion } from 'motion/react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useState } from 'react';
 
 export const DashboardLayout = () => {
   const { user } = useAuth();
-  // Key on user ID + activeContext so all child pages re-mount (and re-fetch) when
-  // the user logs out/in as a different user OR switches personal ↔ agency context
   const layoutKey = `${user?.id ?? 'guest'}-${user?.activeContext ?? 'personal'}`;
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-background text-text flex">
-      <Sidebar />
-      <div className="flex-1 flex flex-col ml-20 lg:ml-64 transition-all duration-300">
-        <Header />
-        <main className="flex-1 p-8 overflow-y-auto">
+      <Sidebar mobileOpen={mobileOpen} onMobileClose={() => setMobileOpen(false)} />
+
+      {/* Main content — offset by sidebar width on desktop only */}
+      <div className="flex-1 flex flex-col min-w-0 lg:ml-60 transition-all duration-300">
+        <Header onMobileMenuClick={() => setMobileOpen(true)} />
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
           <motion.div
             key={layoutKey}
             initial={{ opacity: 0, y: 10 }}

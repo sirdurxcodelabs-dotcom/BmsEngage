@@ -95,14 +95,14 @@ export default function SocialAccountsPage() {
   const connectedCount = accounts.filter(a => a.status === 'connected').length;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-12 pb-20">
+    <div className="max-w-5xl mx-auto space-y-8 sm:space-y-12 pb-16 sm:pb-20">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-black tracking-tight text-text mb-2">Social Accounts</h1>
-          <p className="text-text-muted font-medium">Connect and manage your brand's social presence across major platforms.</p>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-text mb-1 sm:mb-2">Social Accounts</h1>
+          <p className="text-sm text-text-muted font-medium">Connect and manage your brand's social presence across major platforms.</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <button
             onClick={loadAccounts}
             className="p-2.5 rounded-xl border border-border text-text-muted hover:text-text hover:border-primary/30 transition-all"
@@ -171,25 +171,25 @@ export default function SocialAccountsPage() {
       </div>
 
       {/* Info cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="glass border border-border p-8 rounded-3xl flex gap-6 items-start hover:border-primary/30 transition-all">
-          <div className="w-14 h-14 bg-primary/10 text-primary rounded-2xl flex items-center justify-center shrink-0">
-            <Shield size={28} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8">
+        <div className="glass border border-border p-5 sm:p-8 rounded-2xl sm:rounded-3xl flex gap-4 sm:gap-6 items-start hover:border-primary/30 transition-all">
+          <div className="w-10 h-10 sm:w-14 sm:h-14 bg-primary/10 text-primary rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0">
+            <Shield size={22} />
           </div>
           <div>
-            <h3 className="font-bold text-lg mb-2 text-text">Secure Authentication</h3>
-            <p className="text-sm text-text-muted leading-relaxed">
+            <h3 className="font-bold text-base sm:text-lg mb-1 sm:mb-2 text-text">Secure Authentication</h3>
+            <p className="text-xs sm:text-sm text-text-muted leading-relaxed">
               BMS Engage uses official OAuth 2.0 protocols. We never see or store your passwords. Tokens are AES-encrypted at rest and automatically refreshed before expiry.
             </p>
           </div>
         </div>
-        <div className="glass border border-border p-8 rounded-3xl flex gap-6 items-start hover:border-primary/30 transition-all">
-          <div className="w-14 h-14 bg-primary/10 text-primary rounded-2xl flex items-center justify-center shrink-0">
-            <Info size={28} />
+        <div className="glass border border-border p-5 sm:p-8 rounded-2xl sm:rounded-3xl flex gap-4 sm:gap-6 items-start hover:border-primary/30 transition-all">
+          <div className="w-10 h-10 sm:w-14 sm:h-14 bg-primary/10 text-primary rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0">
+            <Info size={22} />
           </div>
           <div>
-            <h3 className="font-bold text-lg mb-2 text-text">Account Limits</h3>
-            <p className="text-sm text-text-muted leading-relaxed">
+            <h3 className="font-bold text-base sm:text-lg mb-1 sm:mb-2 text-text">Account Limits</h3>
+            <p className="text-xs sm:text-sm text-text-muted leading-relaxed">
               Your current plan allows up to 50 connected accounts. You are currently using {accounts.length} slot{accounts.length !== 1 ? 's' : ''}. Contact your account manager to increase limits.
             </p>
           </div>

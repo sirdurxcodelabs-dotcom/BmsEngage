@@ -83,12 +83,12 @@ export default function DashboardOverview() {
   };
 
   return (
-    <div className="space-y-10 pb-20">
+    <div className="space-y-6 sm:space-y-10 pb-16 sm:pb-20">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-black tracking-tight text-text mb-2">Dashboard</h1>
-          <p className="text-text-muted font-medium">Here's your agency's performance at a glance.</p>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-text mb-1 sm:mb-2">Dashboard</h1>
+          <p className="text-sm text-text-muted font-medium">Here's your agency's performance at a glance.</p>
         </div>
         {/* <div className="flex items-center gap-3">
           <Button variant="outline" onClick={() => navigate('/composer', { state: { date: new Date().toISOString().split('T')[0] } })} className="h-12 px-6 rounded-xl font-bold bg-white/5 border-white/10">
@@ -103,7 +103,7 @@ export default function DashboardOverview() {
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         {[
           {
             label: 'Total Assets',
@@ -117,7 +117,7 @@ export default function DashboardOverview() {
           { label: 'Avg. Engagement', value: '4.8%', change: '+0.4%', trend: 'up', icon: Zap },
         ].map((stat, i) => (
           <motion.div key={i} whileHover={{ y: -5 }}
-            className="glass border border-white/10 p-6 rounded-[24px] space-y-4 cursor-pointer group hover:border-primary/30 transition-all">
+            className="glass border border-white/10 p-4 sm:p-6 rounded-[20px] sm:rounded-[24px] space-y-3 sm:space-y-4 cursor-pointer group hover:border-primary/30 transition-all">
             <div className="flex items-center justify-between">
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
                 <stat.icon size={20} />
@@ -130,16 +130,16 @@ export default function DashboardOverview() {
               )}
             </div>
             <div>
-              <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">{stat.label}</p>
-              <p className="text-2xl font-black text-text">{stat.value}</p>
+              <p className="text-[9px] sm:text-[10px] font-bold text-text-muted uppercase tracking-widest">{stat.label}</p>
+              <p className="text-xl sm:text-2xl font-black text-text">{stat.value}</p>
             </div>
           </motion.div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 sm:gap-8">
         {/* Recent Content */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="xl:col-span-2 space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-black text-text">Recent Content</h2>
             <Link to="/gallery" className="text-xs font-bold text-primary uppercase tracking-widest hover:underline flex items-center gap-1.5">
@@ -167,7 +167,7 @@ export default function DashboardOverview() {
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
               {recentMedia.map(asset => (
                 <MediaCard
                   key={asset.id}
@@ -193,7 +193,7 @@ export default function DashboardOverview() {
             </Link>
           </div>
 
-          <div className="glass border border-white/10 rounded-[32px] p-8 space-y-6">
+          <div className="glass border border-white/10 rounded-[24px] sm:rounded-[32px] p-5 sm:p-8 space-y-4 sm:space-y-6">
             {[
               { time: '10:00 AM', platform: 'Instagram', title: 'Summer Campaign Launch', status: 'Ready' },
               { time: '02:30 PM', platform: 'Twitter', title: 'Product Update Thread', status: 'Draft' },

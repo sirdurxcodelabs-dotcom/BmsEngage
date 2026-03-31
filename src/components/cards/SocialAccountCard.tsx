@@ -69,16 +69,16 @@ export const SocialAccountCard = ({ account, onDisconnect, onReconnect, onRefres
       layout
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -4 }}
-      className="group relative glass border border-border rounded-2xl p-5 flex items-center justify-between transition-all hover:border-primary/50 hover:shadow-[0_10px_30px_-10px_rgba(65,1,121,0.2)]"
+      whileHover={{ y: -2 }}
+      className="group relative glass border border-border rounded-2xl p-4 sm:p-5 flex items-center justify-between gap-3 transition-all hover:border-primary/50 hover:shadow-[0_10px_30px_-10px_rgba(65,1,121,0.2)]"
     >
-      <div className="flex items-center gap-5">
-        <div className="relative">
+      <div className="flex items-center gap-3 sm:gap-5 min-w-0">
+        <div className="relative shrink-0">
           <div className={cn(
-            'w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300',
+            'w-11 h-11 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-300',
             isExpired ? 'bg-red-500/10 text-red-500' : colorClass,
           )}>
-            <Icon size={28} />
+            <Icon size={22} />
           </div>
           {!isExpired && (
             <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-4 border-card shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
@@ -88,9 +88,9 @@ export const SocialAccountCard = ({ account, onDisconnect, onReconnect, onRefres
           )}
         </div>
 
-        <div>
-          <div className="flex items-center gap-2 mb-0.5">
-            <h4 className="font-bold text-lg text-text">{label}</h4>
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-0.5">
+            <h4 className="font-bold text-sm sm:text-lg text-text">{label}</h4>
             <span className={cn(
               'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider',
               isExpired ? 'bg-red-500/10 text-red-500' : 'bg-emerald-500/10 text-emerald-500'

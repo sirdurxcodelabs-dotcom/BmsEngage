@@ -102,16 +102,42 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-10 pb-20">
+    <div className="max-w-6xl mx-auto space-y-6 sm:space-y-10 pb-16 sm:pb-20">
       <div>
-        <h1 className="text-4xl font-black tracking-tight text-text mb-2">Settings</h1>
-        <p className="text-text-muted font-medium">Manage your account, preferences, and security.</p>
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-text mb-1 sm:mb-2">Settings</h1>
+        <p className="text-sm text-text-muted font-medium">Manage your account, preferences, and security.</p>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-10">
-        {/* Sidebar */}
-        <div className="w-full lg:w-72 space-y-2">
-          <div className="glass border border-white/10 p-2 rounded-[24px]">
+      <div className="flex flex-col lg:flex-row gap-6 lg:gap-10">
+        {/* Sidebar — horizontal scroll tabs on mobile, vertical list on desktop */}
+        <div className="w-full lg:w-64 shrink-0">
+          {/* Mobile: horizontal scrollable tabs */}
+          <div className="lg:hidden flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-none">
+            {tabs.map((item) => (
+              <button
+                key={item.label}
+                onClick={() => handleTabChange(item.label)}
+                className={cn(
+                  'shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap',
+                  activeTab === item.label
+                    ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                    : 'bg-card border border-border text-text-muted hover:text-text'
+                )}
+              >
+                <item.icon size={14} />
+                {item.label}
+              </button>
+            ))}
+            <button
+              onClick={handleLogout}
+              className="shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-red-500 bg-card border border-border whitespace-nowrap"
+            >
+              <LogOut size={14} /> Log Out
+            </button>
+          </div>
+
+          {/* Desktop: vertical sidebar */}
+          <div className="hidden lg:block glass border border-white/10 p-2 rounded-[24px]">
             {tabs.map((item) => (
               <button
                 key={item.label}

@@ -6,7 +6,11 @@ export type SocialPlatform =
   | 'LinkedIn' 
   | 'YouTube' 
   | 'TikTok' 
-  | 'Twitter';
+  | 'Twitter'
+  | 'meta'
+  | 'twitter'
+  | 'linkedin'
+  | 'tiktok';
 
 export type PostStatus = 'Draft' | 'Scheduled' | 'Published' | 'Failed';
 
@@ -14,10 +18,14 @@ export interface SocialAccount {
   id: string;
   platform: SocialPlatform;
   username: string;
+  displayName?: string;
+  avatar?: string;
   userId: string;
   profileImage?: string;
   status: 'connected' | 'expired';
   connectedAt: string;
+  tokenExpiry?: string | null;
+  meta?: { pageId: string; pageName: string };
 }
 
 export interface PlatformConfig {

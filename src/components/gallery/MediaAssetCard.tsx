@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { createPortal } from 'react-dom';
 import { MoreVertical, Plus, Eye, Edit2, Trash2, FileText, Image as ImageIcon, Film, Layers, Calendar, Share2, AlertCircle, Clock, Reply, Building2 } from 'lucide-react';
 import { MediaAsset } from '../../types/media';
 import { cn } from '../../lib/utils';
@@ -27,6 +28,8 @@ export const MediaAssetCard = ({
 }: MediaAssetCardProps) => {
   const [showMenu, setShowMenu] = React.useState(false);
   const menuRef = React.useRef<HTMLDivElement>(null);
+  const btnRef = React.useRef<HTMLButtonElement>(null);
+  const [menuPos, setMenuPos] = React.useState({ top: 0, right: 0 });
   const navigate = useNavigate();
   const { canUploadAsset, canDeleteAsset } = usePermissions();
   const { user } = useAuth();
@@ -64,7 +67,10 @@ export const MediaAssetCard = ({
 
   React.useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setShowMenu(false);
+      if (
+        menuRef.current && !menuRef.current.contains(e.target as Node) &&
+        btnRef.current && !btnRef.current.contains(e.target as Node)
+      ) setShowMenu(false);
     };
     const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') setShowMenu(false); };
     if (showMenu) {
@@ -76,6 +82,16 @@ export const MediaAssetCard = ({
       document.removeEventListener('keydown', handleEsc);
     };
   }, [showMenu]);
+
+  const openMenu = () => {
+    if (!btnRef.current) return;
+    const rect = btnRef.current.getBoundingClientRect();
+    setMenuPos({
+      top: rect.bottom + window.scrollY + 4,
+      right: window.innerWidth - rect.right,
+    });
+    setShowMenu(v => !v);
+  };
 
   const getCategoryIcon = () => {
     switch (asset.category) {
@@ -162,56 +178,53 @@ export const MediaAssetCard = ({
       <div className="p-4">
         <div className="flex items-start justify-between gap-2 mb-1">
           <h4 className="text-sm font-bold text-text truncate group-hover:text-primary transition-colors flex-1">{asset.title}</h4>
-          <div ref={menuRef} className="relative shrink-0">
-            <button onClick={() => setShowMenu(!showMenu)}
+          <div className="shrink-0">
+            <button ref={btnRef} onClick={openMenu}
               className="p-1.5 text-text-muted hover:text-text hover:bg-white/5 rounded-lg transition-all">
               <MoreVertical size={16} />
             </button>
-            <AnimatePresence>
-              {showMenu && (
-                <motion.div initial={{ opacity: 0, scale: 0.95, y: -8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: -8 }}
-                  className="absolute top-8 right-0 w-52 bg-card border border-border rounded-2xl shadow-2xl z-[60] overflow-hidden p-1.5">
 
-                  {/* View — everyone */}
+            {/* Portal dropdown — renders at document.body level, always on top */}
+            {showMenu && createPortal(
+              <AnimatePresence>
+                <motion.div
+                  ref={menuRef}
+                  initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                  style={{ position: 'fixed', top: menuPos.top, right: menuPos.right, zIndex: 9999 }}
+                  className="w-52 bg-card border border-border rounded-2xl shadow-2xl overflow-hidden p-1.5"
+                >
                   <button onClick={() => { onView(asset); setShowMenu(false); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs text-text-muted hover:text-text hover:bg-white/5 rounded-xl transition-colors">
                     <Eye size={14} /> View Asset
                   </button>
-
-                  {/* Edit — uploader only */}
                   {canEdit && (
                     <button onClick={() => { onEdit(asset); setShowMenu(false); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs text-text-muted hover:text-text hover:bg-white/5 rounded-xl transition-colors">
                       <Edit2 size={14} /> Edit Asset
                     </button>
                   )}
-
-                  {/* Schedule — everyone */}
                   <button onClick={() => { navigate('/composer', { state: { asset } }); setShowMenu(false); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs text-primary hover:bg-primary/5 rounded-xl transition-colors font-bold">
                     <Calendar size={14} /> Schedule
                   </button>
-
-                  {/* Share — uploader only */}
                   {isUploader && (
                     <button onClick={() => { onShare(asset); setShowMenu(false); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs text-text-muted hover:text-text hover:bg-white/5 rounded-xl transition-colors">
                       <Share2 size={14} /> Share Asset
                     </button>
                   )}
-
-                  {/* Delete — owner, no shares or all accepted */}
                   {canDelete && (
                     <button onClick={() => { onDelete(asset); setShowMenu(false); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs text-red-500 hover:bg-red-500/10 rounded-xl transition-colors">
                       <Trash2 size={14} /> Delete Asset
                     </button>
                   )}
-
-                  {/* Request delete — owner, shared, not all accepted */}
                   {canRequestDelete && (
                     <button onClick={() => { onDelete(asset); setShowMenu(false); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs text-orange-400 hover:bg-orange-500/10 rounded-xl transition-colors">
                       <Trash2 size={14} /> {hasDeleteRequest ? 'Awaiting Acceptance' : 'Request Delete'}
                     </button>
                   )}
                 </motion.div>
-              )}
-            </AnimatePresence>
+              </AnimatePresence>,
+              document.body
+            )}
           </div>
         </div>
 

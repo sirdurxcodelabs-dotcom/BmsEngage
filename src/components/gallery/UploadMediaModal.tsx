@@ -7,21 +7,26 @@ import { MediaCategory, MediaStatus, MediaVisibility, MediaAsset } from '../../t
 import { cn } from '../../lib/utils';
 import { useToast } from '../ui/Toast';
 import { mediaService } from '../../services/mediaService';
+import { useAuth } from '../../contexts/AuthContext';
+import { Startup } from '../../services/startupService';
 
 interface UploadMediaModalProps {
   isOpen: boolean;
   onClose: () => void;
   onUpload: (asset: MediaAsset) => void;
   parentAsset?: MediaAsset;
-  correctionReplyTo?: string; // correction ID this variant addresses
+  correctionReplyTo?: string;
+  startups?: Startup[];
 }
 
-export const UploadMediaModal = ({ isOpen, onClose, onUpload, parentAsset, correctionReplyTo }: UploadMediaModalProps) => {
+export const UploadMediaModal = ({ isOpen, onClose, onUpload, parentAsset, correctionReplyTo, startups = [] }: UploadMediaModalProps) => {
   const [files, setFiles] = React.useState<File[]>([]);
   const [isDragging, setIsDragging] = React.useState(false);
   const [isUploading, setIsUploading] = React.useState(false);
   const [uploadProgress, setUploadProgress] = React.useState(0);
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isAgency = user?.activeContext === 'agency';
 
   const [formData, setFormData] = React.useState({
     title: '',
@@ -30,6 +35,7 @@ export const UploadMediaModal = ({ isOpen, onClose, onUpload, parentAsset, corre
     tags: '',
     status: 'Published' as MediaStatus,
     visibility: 'Public' as MediaVisibility,
+    startupId: '',
   });
 
   React.useEffect(() => {
@@ -42,9 +48,10 @@ export const UploadMediaModal = ({ isOpen, onClose, onUpload, parentAsset, corre
           tags: parentAsset.tags.join(', '),
           status: parentAsset.status,
           visibility: parentAsset.visibility,
+          startupId: '',
         });
       } else {
-        setFormData({ title: '', category: 'Image', description: '', tags: '', status: 'Published', visibility: 'Public' });
+        setFormData({ title: '', category: 'Image', description: '', tags: '', status: 'Published', visibility: 'Public', startupId: '' });
       }
       setFiles([]);
       setUploadProgress(0);
@@ -263,6 +270,22 @@ export const UploadMediaModal = ({ isOpen, onClose, onUpload, parentAsset, corre
               </select>
             </div>
           </div>
+          {/* Startup — agency context only, when startups exist */}
+          {isAgency && !parentAsset && startups.length > 0 && (
+            <div className="space-y-1.5 md:col-span-2">
+              <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Startup / Organisation</label>
+              <select
+                value={formData.startupId}
+                onChange={(e) => setFormData({ ...formData, startupId: e.target.value })}
+                className="w-full h-12 bg-background border border-border rounded-xl px-4 text-sm text-text outline-none focus:border-primary/50 transition-all"
+              >
+                <option value="">None</option>
+                {startups.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         <div className="space-y-1.5">

@@ -26,6 +26,7 @@ export const mediaService = {
     tags: string;
     status: string;
     visibility: string;
+    startupId?: string;
   }, onProgress?: (pct: number) => void): Promise<MediaAsset> => {
     const data = new FormData();
     data.append('file', file);
@@ -35,6 +36,7 @@ export const mediaService = {
     data.append('tags', formData.tags);
     data.append('status', formData.status);
     data.append('visibility', formData.visibility);
+    if (formData.startupId) data.append('startupId', formData.startupId);
 
     const res = await api.post('/media/upload', data, {
       headers: { 'Content-Type': 'multipart/form-data' },

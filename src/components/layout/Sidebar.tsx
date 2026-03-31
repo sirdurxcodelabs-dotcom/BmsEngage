@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, Image as ImageIcon, Share2, PenTool,
   Calendar, BarChart3, Settings, Bell,
-  ChevronLeft, ChevronRight, Sun, Moon,
+  ChevronLeft, ChevronRight, Sun, Moon, Building2,
 } from 'lucide-react';
 import { Logo } from '../ui/Logo';
 import { useState } from 'react';
@@ -31,13 +31,19 @@ export const Sidebar = () => {
   const { user } = useAuth();
 
   const features = user?.enabledFeatures;
+  const isAgency = user?.activeContext === 'agency';
 
   // Filter nav items: always show Dashboard; show others only if feature is enabled (or no feature key)
   const navItems = ALL_NAV_ITEMS.filter(item => {
-    if (!item.featureKey) return true; // Dashboard always visible
-    if (!features) return true; // no restrictions if features not loaded yet
+    if (!item.featureKey) return true;
+    if (!features) return true;
     return features[item.featureKey as keyof typeof features] !== false;
   });
+
+  // Startups link — only in agency context
+  const startupsItem = isAgency
+    ? { icon: Building2, label: 'Startups', path: '/startups', featureKey: null }
+    : null;
 
   return (
     <aside className={cn(
@@ -74,6 +80,19 @@ export const Sidebar = () => {
               {!isCollapsed && <span className="font-medium text-sm">{item.label}</span>}
             </NavLink>
           ))}
+          {/* Startups — agency context only */}
+          {startupsItem && (
+            <NavLink to={startupsItem.path}
+              className={({ isActive }) => cn(
+                'flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group relative',
+                isActive
+                  ? 'bg-primary text-white shadow-lg shadow-primary/40 scale-[1.02]'
+                  : 'text-text-muted hover:text-text hover:bg-primary/5'
+              )}>
+              <startupsItem.icon size={20} className={cn(isCollapsed && 'mx-auto')} />
+              {!isCollapsed && <span className="font-medium text-sm">{startupsItem.label}</span>}
+            </NavLink>
+          )}
         </nav>
 
         <div className="p-4">

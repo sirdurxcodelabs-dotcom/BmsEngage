@@ -1,8 +1,9 @@
-import * as React from 'react';
+﻿import * as React from 'react';
 import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { MediaAsset, MediaCategory } from '../types/media';
+import { MediaAsset } from '../types/media';
 import { mediaService, requestDeleteMedia, acceptDeleteRequest } from '../services/mediaService';
+import { startupService, Startup } from '../services/startupService';
 import { MediaGalleryTopBar } from '../components/gallery/MediaGalleryTopBar';
 import { MediaAssetCard } from '../components/gallery/MediaAssetCard';
 import { UploadMediaModal } from '../components/gallery/UploadMediaModal';
@@ -12,10 +13,15 @@ import { DeleteAssetModal } from '../components/gallery/DeleteAssetModal';
 import { ShareAssetModal } from '../components/gallery/ShareAssetModal';
 import { useToast } from '../components/ui/Toast';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { usePermissions } from '../hooks/usePermissions';
 import { useAuth } from '../contexts/AuthContext';
+
+const PAGE_SIZE = 12;
+const DAY_INDEX: Record<string, number> = {
+  Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5,
+};
 
 export default function GalleryPage() {
   const [media, setMedia] = useState<MediaAsset[]>([]);
@@ -24,12 +30,16 @@ export default function GalleryPage() {
   const [activeCategory, setActiveCategory] = useState('All');
   const [activeFileType, setActiveFileType] = useState('All');
   const [activeSort, setActiveSort] = useState('Newest');
+  const [activeWeekDay, setActiveWeekDay] = useState('All');
+  const [activeStartup, setActiveStartup] = useState('All');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [startups, setStartups] = useState<Startup[]>([]);
   const { toast } = useToast();
-  const { canUploadAsset, canDeleteAsset } = usePermissions();
+  const { canUploadAsset } = usePermissions();
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
+  const isAgency = user?.activeContext === 'agency';
 
-  // Load media from API
   useEffect(() => {
     const load = async () => {
       try {
@@ -45,7 +55,11 @@ export default function GalleryPage() {
     load();
   }, []);
 
-  // Handle ?editAsset=:id from edit share link — open variant upload for that asset
+  useEffect(() => {
+    if (!isAgency) return;
+    startupService.list().then(setStartups).catch(() => {});
+  }, [isAgency]);
+
   useEffect(() => {
     const editAssetId = searchParams.get('editAsset');
     if (!editAssetId || isLoading) return;
@@ -53,12 +67,10 @@ export default function GalleryPage() {
     if (target) {
       setParentForVariant(target);
       setIsUploadOpen(true);
-      // Log edit link access on the backend
       mediaService.getMediaById?.(editAssetId, 'editlink').catch(() => {});
     }
   }, [searchParams, media, isLoading]);
 
-  // Modal States
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -69,25 +81,37 @@ export default function GalleryPage() {
   const [parentForVariant, setParentForVariant] = useState<MediaAsset | undefined>(undefined);
   const [correctionReplyTo, setCorrectionReplyTo] = useState<string | undefined>(undefined);
 
-  // Filtering Logic
+  useEffect(() => { setCurrentPage(1); }, [searchQuery, activeCategory, activeFileType, activeSort, activeWeekDay, activeStartup]);
+
   const filteredMedia = useMemo(() => {
     return media.filter(asset => {
-      const matchesSearch = asset.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                           asset.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+      const matchesSearch =
+        asset.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        asset.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
       const matchesCategory = activeCategory === 'All' || asset.category === activeCategory;
       const matchesFileType = activeFileType === 'All' || asset.metadata.fileType === activeFileType;
-      
-      return matchesSearch && matchesCategory && matchesFileType;
+      let matchesDay = true;
+      if (activeWeekDay !== 'All') {
+        const dayIdx = DAY_INDEX[activeWeekDay];
+        matchesDay = new Date(asset.metadata.createdDate).getDay() === dayIdx;
+      }
+      let matchesStartup = true;
+      if (activeStartup !== 'All') {
+        matchesStartup = activeStartup === 'none' ? !asset.startupId : asset.startupId === activeStartup;
+      }
+      return matchesSearch && matchesCategory && matchesFileType && matchesDay && matchesStartup;
     }).sort((a, b) => {
       if (activeSort === 'Newest') return new Date(b.metadata.createdDate).getTime() - new Date(a.metadata.createdDate).getTime();
       if (activeSort === 'Oldest') return new Date(a.metadata.createdDate).getTime() - new Date(b.metadata.createdDate).getTime();
       if (activeSort === 'A–Z') return a.title.localeCompare(b.title);
       return 0;
     });
-  }, [media, searchQuery, activeCategory, activeFileType, activeSort]);
+  }, [media, searchQuery, activeCategory, activeFileType, activeSort, activeWeekDay, activeStartup]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredMedia.length / PAGE_SIZE));
+  const pagedMedia = filteredMedia.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const handleUpload = (newAsset: MediaAsset) => {
-    // If it's an updated asset (variant added), replace it; otherwise prepend
     setMedia((prev) => {
       const exists = prev.find((m) => m.id === newAsset.id);
       if (exists) return prev.map((m) => m.id === newAsset.id ? newAsset : m);
@@ -108,7 +132,6 @@ export default function GalleryPage() {
     } catch (err: any) {
       const data = err?.response?.data;
       if (data?.requiresRequest) {
-        // Need to send delete request first
         toast('Asset is shared — sending delete request to shared users...', 'info');
         try {
           const updated = await requestDeleteMedia(selectedAsset.id);
@@ -135,60 +158,96 @@ export default function GalleryPage() {
     } catch { toast('Failed to accept delete request', 'error'); }
   };
 
-  const handleDownload = (asset: any) => {
-    toast(`Downloading ${asset.title}...`, 'success');
-    // In a real app, this would trigger a file download
-  };
-
   const handleClearFilters = () => {
-    setSearchQuery('');
-    setActiveCategory('All');
-    setActiveFileType('All');
-    setActiveSort('Newest');
+    setSearchQuery(''); setActiveCategory('All'); setActiveFileType('All');
+    setActiveSort('Newest'); setActiveWeekDay('All'); setActiveStartup('All');
     toast('All filters cleared', 'info');
   };
 
   return (
     <div className="space-y-8 pb-20">
-      <MediaGalleryTopBar 
+      <MediaGalleryTopBar
         onSearch={setSearchQuery}
         onCategoryChange={setActiveCategory}
         onFileTypeChange={setActiveFileType}
         onSortChange={setActiveSort}
+        onWeekDayChange={setActiveWeekDay}
+        onStartupChange={setActiveStartup}
         onClearFilters={handleClearFilters}
         onUploadClick={() => { setParentForVariant(undefined); setIsUploadOpen(true); }}
         canUpload={canUploadAsset}
         activeCategory={activeCategory}
         activeFileType={activeFileType}
         activeSort={activeSort}
+        activeWeekDay={activeWeekDay}
+        activeStartup={activeStartup}
         searchQuery={searchQuery}
+        startups={startups}
+        isAgencyContext={isAgency}
       />
 
       {isLoading ? (
         <div className="flex items-center justify-center py-32">
           <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
         </div>
-      ) : filteredMedia.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          <AnimatePresence mode="popLayout">
-            {filteredMedia.map((asset) => (
-              <MediaAssetCard 
-                key={asset.id}
-                asset={asset}
-                currentUserId={user?.id}
-                onView={(a) => { setSelectedAsset(a); setIsDetailOpen(true); }}
-                onEdit={(a) => { setSelectedAsset(a); setIsEditOpen(true); }}
-                onAddVariant={(a) => { setCorrectionReplyTo(undefined); setParentForVariant(a); setIsUploadOpen(true); }}
-                onAddVariantForCorrection={(a, corrId) => { setCorrectionReplyTo(corrId); setParentForVariant(a); setIsUploadOpen(true); }}
-                onDelete={(a) => { setSelectedAsset(a); setIsDeleteOpen(true); }}
-                onShare={(a) => { setSelectedAsset(a); setIsShareOpen(true); }}
-                onAcceptDelete={handleAcceptDelete}
-              />
-            ))}
-          </AnimatePresence>
-        </div>
+      ) : pagedMedia.length > 0 ? (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            <AnimatePresence mode="popLayout">
+              {pagedMedia.map((asset) => (
+                <MediaAssetCard
+                  key={asset.id}
+                  asset={asset}
+                  currentUserId={user?.id}
+                  onView={(a) => { setSelectedAsset(a); setIsDetailOpen(true); }}
+                  onEdit={(a) => { setSelectedAsset(a); setIsEditOpen(true); }}
+                  onAddVariant={(a) => { setCorrectionReplyTo(undefined); setParentForVariant(a); setIsUploadOpen(true); }}
+                  onAddVariantForCorrection={(a, corrId) => { setCorrectionReplyTo(corrId); setParentForVariant(a); setIsUploadOpen(true); }}
+                  onDelete={(a) => { setSelectedAsset(a); setIsDeleteOpen(true); }}
+                  onShare={(a) => { setSelectedAsset(a); setIsShareOpen(true); }}
+                  onAcceptDelete={handleAcceptDelete}
+                />
+              ))}
+            </AnimatePresence>
+          </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 pt-4">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="p-2 rounded-xl border border-border text-text-muted hover:text-text hover:border-primary/30 disabled:opacity-40 transition-all"
+              >
+                <ChevronLeft size={18} />
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`w-9 h-9 rounded-xl text-sm font-bold transition-all ${
+                    page === currentPage
+                      ? 'bg-primary text-white shadow-lg shadow-primary/30'
+                      : 'border border-border text-text-muted hover:text-text hover:border-primary/30'
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="p-2 rounded-xl border border-border text-text-muted hover:text-text hover:border-primary/30 disabled:opacity-40 transition-all"
+              >
+                <ChevronRight size={18} />
+              </button>
+              <span className="text-xs text-text-muted ml-2">
+                {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filteredMedia.length)} of {filteredMedia.length}
+              </span>
+            </div>
+          )}
+        </>
       ) : (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="flex flex-col items-center justify-center py-32 text-center"
@@ -197,32 +256,25 @@ export default function GalleryPage() {
             <Search size={32} />
           </div>
           <h3 className="text-2xl font-bold text-text mb-2">No assets found</h3>
-          <p className="text-text-muted max-w-md">We couldn't find any media matching your current filters. Try adjusting your search or category.</p>
-          <Button 
-            variant="outline" 
-            className="mt-8"
-            onClick={() => { setSearchQuery(''); setActiveCategory('All'); setActiveFileType('All'); }}
-          >
-            Clear All Filters
-          </Button>
+          <p className="text-text-muted max-w-md">We couldn't find any media matching your current filters.</p>
+          <Button variant="outline" className="mt-8" onClick={handleClearFilters}>Clear All Filters</Button>
         </motion.div>
       )}
 
-      {/* Modals */}
-      <UploadMediaModal 
+      <UploadMediaModal
         isOpen={isUploadOpen}
         onClose={() => { setIsUploadOpen(false); setParentForVariant(undefined); setCorrectionReplyTo(undefined); }}
         onUpload={handleUpload}
         parentAsset={parentForVariant}
         correctionReplyTo={correctionReplyTo}
+        startups={startups}
       />
-
-      <AssetDetailModal 
+      <AssetDetailModal
         isOpen={isDetailOpen}
         onClose={() => setIsDetailOpen(false)}
         asset={selectedAsset}
         onEdit={(a) => { setIsDetailOpen(false); setSelectedAsset(a); setIsEditOpen(true); }}
-        onDownload={handleDownload}
+        onDownload={(asset) => toast(`Downloading ${asset.title}...`, 'success')}
         onShare={(a) => { setSelectedAsset(a); setIsShareOpen(true); }}
         onAssetUpdate={(updated) => {
           setMedia(prev => prev.map(m => m.id === updated.id ? updated : m));
@@ -235,8 +287,7 @@ export default function GalleryPage() {
           setIsUploadOpen(true);
         }}
       />
-
-      <EditAssetModal 
+      <EditAssetModal
         isOpen={isEditOpen}
         onClose={() => setIsEditOpen(false)}
         asset={selectedAsset}
@@ -245,16 +296,14 @@ export default function GalleryPage() {
           setSelectedAsset(updated);
         }}
       />
-
-      <DeleteAssetModal 
+      <DeleteAssetModal
         isOpen={isDeleteOpen}
         onClose={() => { setIsDeleteOpen(false); setSelectedAsset(null); }}
         onConfirm={handleDelete}
         asset={selectedAsset}
         isLoading={isDeleting}
       />
-
-      <ShareAssetModal 
+      <ShareAssetModal
         isOpen={isShareOpen}
         onClose={() => { setIsShareOpen(false); setSelectedAsset(null); }}
         asset={selectedAsset}

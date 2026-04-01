@@ -1,5 +1,5 @@
 export type MediaCategory = 'Flyer' | 'Image' | 'Video' | 'Graphics';
-export type MediaStatus = 'Draft' | 'Published' | 'Archived';
+export type MediaStatus = 'In Development' | 'Sent for Correction' | 'Corrected' | 'Approved' | 'Archived';
 export type MediaVisibility = 'Private' | 'Public' | 'Team';
 
 export interface MediaMetadata {

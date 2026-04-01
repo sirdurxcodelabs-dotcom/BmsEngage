@@ -105,10 +105,12 @@ export const MediaAssetCard = ({
 
   const getStatusColor = () => {
     switch (asset.status) {
-      case 'Published': return 'text-emerald-500 bg-emerald-500/10';
-      case 'Draft': return 'text-amber-500 bg-amber-500/10';
-      case 'Archived': return 'text-text-muted bg-white/5';
-      default: return 'text-text-muted bg-white/5';
+      case 'In Development':    return 'text-blue-400 bg-blue-500/10';
+      case 'Sent for Correction': return 'text-orange-400 bg-orange-500/10';
+      case 'Corrected':         return 'text-cyan-400 bg-cyan-500/10';
+      case 'Approved':          return 'text-emerald-500 bg-emerald-500/10';
+      case 'Archived':          return 'text-text-muted bg-white/5';
+      default:                  return 'text-text-muted bg-white/5';
     }
   };
 
@@ -158,8 +160,10 @@ export const MediaAssetCard = ({
           </div>
         )}
 
-        <div className={cn("absolute top-3 right-3 px-2.5 py-1 rounded-lg backdrop-blur-md text-[10px] font-bold uppercase tracking-wider border border-white/5", getStatusColor())}>
-          {asset.status}
+        <div className={cn("absolute top-3 right-3 px-2 py-1 rounded-lg backdrop-blur-md text-[9px] font-bold uppercase tracking-wider border border-white/5 max-w-[90px] truncate", getStatusColor())}>
+          {asset.status === 'Sent for Correction' ? 'For Correction' :
+           asset.status === 'In Development' ? 'In Dev' :
+           asset.status}
         </div>
 
         {/* Startup badge — bottom left of thumbnail */}

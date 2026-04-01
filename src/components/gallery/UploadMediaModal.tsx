@@ -3,7 +3,7 @@ import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Upload, X, FileText, Image as ImageIcon, Film, Layers, Loader2 } from 'lucide-react';
-import { MediaCategory, MediaStatus, MediaVisibility, MediaAsset } from '../../types/media';
+import { MediaCategory, MediaVisibility, MediaAsset } from '../../types/media';
 import { cn } from '../../lib/utils';
 import { useToast } from '../ui/Toast';
 import { mediaService } from '../../services/mediaService';
@@ -64,7 +64,6 @@ export const UploadMediaModal = ({ isOpen, onClose, onUpload, parentAsset, corre
     category: 'Image' as MediaCategory,
     description: '',
     tags: '',
-    status: 'Published' as MediaStatus,
     visibility: 'Public' as MediaVisibility,
     startupId: '',
   });
@@ -77,12 +76,11 @@ export const UploadMediaModal = ({ isOpen, onClose, onUpload, parentAsset, corre
           category: parentAsset.category,
           description: parentAsset.description,
           tags: parentAsset.tags.join(', '),
-          status: parentAsset.status,
           visibility: parentAsset.visibility,
           startupId: '',
         });
       } else {
-        setFormData({ title: '', category: 'Image', description: '', tags: '', status: 'Published', visibility: 'Public', startupId: '' });
+        setFormData({ title: '', category: 'Image', description: '', tags: '', visibility: 'Public', startupId: '' });
       }
       setFiles([]);
       setUploadProgress(0);
@@ -150,7 +148,6 @@ export const UploadMediaModal = ({ isOpen, onClose, onUpload, parentAsset, corre
       } else {
         const assets = await mediaService.uploadMultiple(files, {
           category: formData.category,
-          status: formData.status,
           visibility: formData.visibility,
         });
         assets.forEach((a) => onUpload(a));
@@ -306,23 +303,13 @@ export const UploadMediaModal = ({ isOpen, onClose, onUpload, parentAsset, corre
             </select>
           </div>
           <Input label="Tags" placeholder="summer, campaign, 2024 (comma separated)" value={formData.tags} onChange={(e) => setFormData({ ...formData, tags: e.target.value })} />
-          <div className="grid grid-cols-2 gap-3 sm:gap-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Status</label>
-              <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value as MediaStatus })} className="w-full h-12 bg-background border border-border rounded-xl px-4 text-sm text-text outline-none focus:border-primary/50 transition-all">
-                <option value="Published">Published</option>
-                <option value="Draft">Draft</option>
-                <option value="Archived">Archived</option>
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Visibility</label>
-              <select value={formData.visibility} onChange={(e) => setFormData({ ...formData, visibility: e.target.value as MediaVisibility })} className="w-full h-12 bg-background border border-border rounded-xl px-4 text-sm text-text outline-none focus:border-primary/50 transition-all">
-                <option value="Public">Public</option>
-                <option value="Team">Team</option>
-                <option value="Private">Private</option>
-              </select>
-            </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Visibility</label>
+            <select value={formData.visibility} onChange={(e) => setFormData({ ...formData, visibility: e.target.value as MediaVisibility })} className="w-full h-12 bg-background border border-border rounded-xl px-4 text-sm text-text outline-none focus:border-primary/50 transition-all">
+              <option value="Public">Public</option>
+              <option value="Team">Team</option>
+              <option value="Private">Private</option>
+            </select>
           </div>
           {/* Startup — agency context only, when startups exist */}
           {isAgency && !parentAsset && startups.length > 0 && (

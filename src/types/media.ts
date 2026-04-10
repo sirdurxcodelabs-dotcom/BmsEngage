@@ -68,6 +68,7 @@ export interface MediaAsset {
   context: 'personal' | 'agency';
   agencyId: string | null;
   startupId: string | null;
+  campaignEventId: string | null;
   targetDate: string | null;
   approvalStatus: 'pending' | 'approved' | 'rejected';
   approvedBy: string | null;

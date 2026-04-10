@@ -98,14 +98,16 @@ export default function GalleryPage() {
     return execRoles.includes(role);
   })();
 
-  // Assets uploaded this week (Mon–Sun)
+  // Assets whose targetDate falls in the current week (Mon–Sun)
   const thisWeekAssets = useMemo(() => {
     const now = new Date();
-    const dayOfWeek = now.getDay(); // 0=Sun
-    const monday = new Date(now);
-    monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
-    monday.setHours(0, 0, 0, 0);
-    return media.filter(a => new Date(a.metadata.createdDate) >= monday);
+    const weekStart = startOfWeek(now, { weekStartsOn: 1 });
+    const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
+    return media.filter(a => {
+      if (!a.targetDate) return false;
+      const td = new Date(a.targetDate);
+      return td >= weekStart && td <= weekEnd;
+    });
   }, [media]);
 
   useEffect(() => { setCurrentPage(1); }, [searchQuery, activeCategory, activeFileType, activeSort, activeWeekRange, activeDateFrom, activeDateTo, activeStartup]);

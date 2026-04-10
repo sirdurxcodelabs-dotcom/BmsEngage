@@ -27,6 +27,7 @@ export const mediaService = {
     visibility: string;
     startupId?: string;
     targetDate?: string;
+    campaignEventId?: string;
   }, onProgress?: (pct: number) => void): Promise<MediaAsset> => {
     const data = new FormData();
     data.append('file', file);
@@ -37,6 +38,7 @@ export const mediaService = {
     data.append('visibility', formData.visibility);
     if (formData.startupId) data.append('startupId', formData.startupId);
     if (formData.targetDate) data.append('targetDate', formData.targetDate);
+    if (formData.campaignEventId) data.append('campaignEventId', formData.campaignEventId);
 
     const res = await api.post('/media/upload', data, {
       headers: { 'Content-Type': 'multipart/form-data' },

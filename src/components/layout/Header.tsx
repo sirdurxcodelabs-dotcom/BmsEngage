@@ -9,6 +9,7 @@ import { useTheme } from '../../lib/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { NotificationPanel } from '../notifications/NotificationPanel';
+import { CampaignNotificationBell } from '../campaigns/CampaignNotificationBell';
 import { switchContext } from '../../services/settingsService';
 
 export const Header = ({ onMobileMenuClick }: { onMobileMenuClick?: () => void }) => {
@@ -251,6 +252,9 @@ export const Header = ({ onMobileMenuClick }: { onMobileMenuClick?: () => void }
             </span>
           )}
         </button>
+
+        {/* Campaign notification bell — agency context only */}
+        {user?.activeContext === 'agency' && <CampaignNotificationBell />}
 
         <div className="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-4 border-l border-border relative" ref={userMenuRef}>
           <div className="text-right hidden sm:block">

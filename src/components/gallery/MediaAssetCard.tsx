@@ -48,11 +48,13 @@ export const MediaAssetCard = ({
     asset.sharedWith.every(uid => asset.deleteRequest!.acceptances.includes(uid));
 
   // Delete rules:
-  // - Agency context: only agency owner (agencyRole === 'owner') can delete
+  // - Agency context: agency owner OR any executive role can delete
   // - Personal context: only uploader, and if shared all must accept first
   const isAgencyOwner = user?.activeContext === 'agency' && user?.agencyRole === 'owner';
+  const isAgencyExecutive = user?.activeContext === 'agency' && user?.agencyRole &&
+    ['ceo', 'coo', 'creative_director', 'head_of_production'].includes(user.agencyRole);
   const canDelete = asset.context === 'agency'
-    ? isAgencyOwner
+    ? (isAgencyOwner || isAgencyExecutive)
     : isUploader && (asset.sharedWith.length === 0 || allAccepted);
   const canRequestDelete = asset.context !== 'agency' && isUploader && asset.sharedWith.length > 0 && !allAccepted;
 

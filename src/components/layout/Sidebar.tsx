@@ -2,7 +2,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Image as ImageIcon, Share2, PenTool,
   Calendar, BarChart3, Settings, Bell,
-  ChevronLeft, ChevronRight, Sun, Moon, Building2, X, Menu,
+  ChevronLeft, ChevronRight, Sun, Moon, Building2, X, Menu, Flag,
 } from 'lucide-react';
 import { Logo } from '../ui/Logo';
 import { useState, useEffect } from 'react';
@@ -48,7 +48,15 @@ export const Sidebar = ({ mobileOpen, onMobileClose }: SidebarProps) => {
     ? { icon: Building2, label: 'Startups', path: '/startups' }
     : null;
 
-  const allItems = startupsItem ? [...navItems, startupsItem] : [...navItems];
+  const campaignsItem = isAgency
+    ? { icon: Flag, label: 'Campaigns', path: '/campaigns' }
+    : null;
+
+  const allItems = [
+    ...navItems,
+    ...(startupsItem ? [startupsItem] : []),
+    ...(campaignsItem ? [campaignsItem] : []),
+  ];
 
   // Close mobile drawer on route change
   useEffect(() => {

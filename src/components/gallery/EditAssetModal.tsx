@@ -4,7 +4,7 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import {
   Trash2, AlertCircle, Save, History, FileText, Image as ImageIcon,
-  Film, Layers, ChevronDown, Loader2, Building2, Calendar,
+  Film, Layers, ChevronDown, Loader2, Building2, Calendar, Flag,
 } from 'lucide-react';
 import { MediaAsset, MediaVisibility, MediaCategory } from '../../types/media';
 import { useToast } from '../ui/Toast';
@@ -12,6 +12,7 @@ import { cn } from '../../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { mediaService, deleteVariant } from '../../services/mediaService';
 import { startupService, Startup } from '../../services/startupService';
+import { campaignEventService, CampaignEvent } from '../../services/campaignEventService';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface EditAssetModalProps {
@@ -29,32 +30,38 @@ export const EditAssetModal = ({ isOpen, onClose, asset, onSave }: EditAssetModa
   const [deletingVariantId, setDeletingVariantId] = React.useState<string | null>(null);
   const [localAsset, setLocalAsset] = React.useState<MediaAsset | null>(null);
   const [startups, setStartups] = React.useState<Startup[]>([]);
-  const wasOpenRef = React.useRef(false);
+  const [campaignEvents, setCampaignEvents] = React.useState<CampaignEvent[]>([]);
 
   const isAgency = user?.activeContext === 'agency';
   const hasStartups = isAgency && startups.length > 0 && user?.agency?.enableStartups;
 
-  // Load startups for agency context
   React.useEffect(() => {
-    if (isAgency) startupService.list().then(setStartups).catch(() => {});
+    if (isAgency) {
+      startupService.list().then(setStartups).catch(() => {});
+      campaignEventService.list().then(setCampaignEvents).catch(() => {});
+    }
   }, [isAgency]);
 
+  // Reset form every time the modal opens OR the asset changes — fix the wasOpenRef bug
   React.useEffect(() => {
-    const justOpened = isOpen && !wasOpenRef.current;
-    wasOpenRef.current = isOpen;
-    if (justOpened && asset) {
+    if (isOpen && asset) {
       setLocalAsset(asset);
       setFormData({
-        title: asset.title,
-        category: asset.category,
-        description: asset.description,
-        tags: asset.tags.join(', '),
-        visibility: asset.visibility,
+        title: asset.title || '',
+        category: asset.category || 'Image',
+        description: asset.description || '',
+        tags: asset.tags?.join(', ') || '',
+        visibility: asset.visibility || 'Public',
         startupId: asset.startupId || '',
         targetDate: asset.targetDate ? asset.targetDate.split('T')[0] : '',
+        campaignEventId: (asset as any).campaignEventId || '',
       });
     }
-  }, [asset, isOpen]);
+    if (!isOpen) {
+      setFormData(null);
+      setLocalAsset(null);
+    }
+  }, [isOpen, asset?.id]); // depend on asset.id so switching assets re-populates
 
   if (!localAsset || !formData) return null;
 
@@ -72,7 +79,6 @@ export const EditAssetModal = ({ isOpen, onClose, asset, onSave }: EditAssetModa
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Validation
     if (!formData.title.trim()) { toast('Title is required', 'error'); return; }
     if (!formData.tags.trim()) { toast('At least one tag is required', 'error'); return; }
     if (!formData.targetDate) { toast('Target date is required', 'error'); return; }
@@ -88,6 +94,7 @@ export const EditAssetModal = ({ isOpen, onClose, asset, onSave }: EditAssetModa
         visibility: formData.visibility,
         startupId: formData.startupId || null,
         targetDate: formData.targetDate || null,
+        campaignEventId: formData.campaignEventId || null,
       } as any);
       const merged = { ...updated, variants: localAsset.variants };
       onSave(merged);
@@ -162,7 +169,7 @@ export const EditAssetModal = ({ isOpen, onClose, asset, onSave }: EditAssetModa
 
           {/* Right: Form */}
           <div className="lg:col-span-8 space-y-5">
-            {/* Title — required */}
+            {/* Title */}
             <div className="space-y-1.5">
               <label className="text-xs font-black text-text-muted uppercase tracking-widest">
                 Title <span className="text-red-400">*</span>
@@ -204,7 +211,7 @@ export const EditAssetModal = ({ isOpen, onClose, asset, onSave }: EditAssetModa
               </div>
             </div>
 
-            {/* Tags — required */}
+            {/* Tags */}
             <div className="space-y-1.5">
               <label className="text-xs font-black text-text-muted uppercase tracking-widest">
                 Tags <span className="text-red-400">*</span> <span className="text-text-muted font-normal normal-case">(comma separated)</span>
@@ -214,7 +221,7 @@ export const EditAssetModal = ({ isOpen, onClose, asset, onSave }: EditAssetModa
                 placeholder="marketing, summer, social..." />
             </div>
 
-            {/* Startup — required for agency with enableStartups */}
+            {/* Startup */}
             {hasStartups && (
               <div className="space-y-1.5">
                 <label className="text-xs font-black text-text-muted uppercase tracking-widest flex items-center gap-1.5">
@@ -231,10 +238,27 @@ export const EditAssetModal = ({ isOpen, onClose, asset, onSave }: EditAssetModa
               </div>
             )}
 
+            {/* Campaign Event */}
+            {isAgency && campaignEvents.length > 0 && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-black text-text-muted uppercase tracking-widest flex items-center gap-1.5">
+                  <Flag size={11} /> Campaign Event <span className="text-text-muted font-normal normal-case">(optional)</span>
+                </label>
+                <div className="relative">
+                  <select value={formData.campaignEventId} onChange={e => setFormData({ ...formData, campaignEventId: e.target.value })}
+                    className="w-full h-12 bg-white/5 border border-white/10 rounded-xl px-4 pr-9 text-sm font-bold text-text outline-none focus:border-primary/50 appearance-none transition-all">
+                    <option value="">None</option>
+                    {campaignEvents.map(ev => <option key={ev.id} value={ev.id}>{ev.title}</option>)}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" size={15} />
+                </div>
+              </div>
+            )}
+
             {/* Target Date */}
             <div className="space-y-1.5">
               <label className="text-xs font-black text-text-muted uppercase tracking-widest flex items-center gap-1.5">
-                <Calendar size={11} /> Target Date <span className="text-red-400">*</span> <span className="text-text-muted font-normal normal-case">(week this asset is for)</span>
+                <Calendar size={11} /> Target Date <span className="text-red-400">*</span>
               </label>
               <input type="date" value={formData.targetDate} onChange={e => setFormData({ ...formData, targetDate: e.target.value })} required
                 className="w-full h-12 bg-white/5 border border-white/10 rounded-xl px-4 text-sm font-bold text-text outline-none focus:border-primary/50 transition-all" />

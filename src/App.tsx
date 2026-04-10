@@ -31,6 +31,7 @@ import SharedAssetPage from './app/SharedAssetPage';
 import AdminDashboard from './app/admin/AdminDashboard';
 import { AdminLayout } from './components/layout/AdminLayout';
 import StartupsPage from './app/StartupsPage';
+import CampaignEventsPage from './app/CampaignEventsPage';
 
 // Redirects /gallery/share/:id/edit → /gallery?editAsset=:id after login
 function GalleryEditRedirect() {
@@ -110,6 +111,7 @@ export default function App() {
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/startups" element={<StartupsPage />} />
+              <Route path="/campaigns" element={<CampaignEventsPage />} />
             </Route>
 
             {/* Superadmin Routes */}

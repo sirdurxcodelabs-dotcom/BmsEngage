@@ -17,6 +17,8 @@ interface UploadMediaModalProps {
   parentAsset?: MediaAsset;
   correctionReplyTo?: string;
   startups?: Startup[];
+  campaignEventId?: string;
+  targetDate?: string; // pre-filled, read-only when passed
 }
 
 const VIDEO_MAX_BYTES = 2 * 1024 * 1024 * 1024; // 2 GB
@@ -50,7 +52,7 @@ const ACCEPTED_INPUT = [
   '.tiff', '.tif', '.heic', '.heif', '.avif', '.ico',
 ].join(',');
 
-export const UploadMediaModal = ({ isOpen, onClose, onUpload, parentAsset, correctionReplyTo, startups = [] }: UploadMediaModalProps) => {
+export const UploadMediaModal = ({ isOpen, onClose, onUpload, parentAsset, correctionReplyTo, startups = [], campaignEventId, targetDate: propTargetDate }: UploadMediaModalProps) => {
   const [files, setFiles] = React.useState<File[]>([]);
   const [isDragging, setIsDragging] = React.useState(false);
   const [isUploading, setIsUploading] = React.useState(false);
@@ -58,6 +60,13 @@ export const UploadMediaModal = ({ isOpen, onClose, onUpload, parentAsset, corre
   const { toast } = useToast();
   const { user } = useAuth();
   const isAgency = user?.activeContext === 'agency';
+  const [campaignEvents, setCampaignEvents] = React.useState<any[]>([]);
+
+  React.useEffect(() => {
+    if (isAgency && isOpen && !parentAsset) {
+      import('../../services/campaignEventService').then(m => m.campaignEventService.list()).then(setCampaignEvents).catch(() => {});
+    }
+  }, [isAgency, isOpen, parentAsset]);
 
   const [formData, setFormData] = React.useState({
     title: '',
@@ -67,6 +76,7 @@ export const UploadMediaModal = ({ isOpen, onClose, onUpload, parentAsset, corre
     visibility: 'Public' as MediaVisibility,
     startupId: '',
     targetDate: '',
+    campaignEventId: '',
   });
 
   React.useEffect(() => {
@@ -80,9 +90,10 @@ export const UploadMediaModal = ({ isOpen, onClose, onUpload, parentAsset, corre
           visibility: parentAsset.visibility,
           startupId: '',
           targetDate: parentAsset.targetDate ? parentAsset.targetDate.split('T')[0] : '',
+          campaignEventId: (parentAsset as any).campaignEventId || '',
         });
       } else {
-        setFormData({ title: '', category: 'Image', description: '', tags: '', visibility: 'Public', startupId: '', targetDate: '' });
+        setFormData({ title: '', category: 'Image', description: '', tags: '', visibility: 'Public', startupId: '', targetDate: propTargetDate || '', campaignEventId: campaignEventId || '' });
       }
       setFiles([]);
       setUploadProgress(0);
@@ -121,7 +132,21 @@ export const UploadMediaModal = ({ isOpen, onClose, onUpload, parentAsset, corre
     } else {
       setFiles((prev) => {
         const existing = new Set(prev.map((f) => f.name + f.size));
-        return [...prev, ...valid.filter((f) => !existing.has(f.name + f.size))];
+        const newFiles = valid.filter((f) => !existing.has(f.name + f.size));
+        // Auto-generate title from first new file if title is still empty
+        if (newFiles.length > 0 && !formData.title) {
+          const baseName = newFiles[0].name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+          // Priority: campaign event name > startup name > file name
+          const campaignEvent = campaignEvents.find((ev: any) => ev.id === (formData.campaignEventId || campaignEventId));
+          const startup = startups.find(s => s.id === formData.startupId);
+          const autoTitle = campaignEvent
+            ? `${campaignEvent.title} — ${baseName}`
+            : startup
+            ? `${startup.name} — ${baseName}`
+            : baseName;
+          setFormData((fd: any) => ({ ...fd, title: autoTitle }));
+        }
+        return [...prev, ...newFiles];
       });
     }
   };
@@ -136,6 +161,8 @@ export const UploadMediaModal = ({ isOpen, onClose, onUpload, parentAsset, corre
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (files.length === 0) { toast('Please select a file to upload', 'error'); return; }
+    if (!formData.title.trim()) { toast('Title is required', 'error'); return; }
+    if (!formData.tags.trim()) { toast('At least one tag is required', 'error'); return; }
     // Startup is required for agency uploads when feature is enabled
     if (isAgency && !parentAsset && startups.length > 0 && user?.agency?.enableStartups && !formData.startupId) {
       toast('Please select a startup / organisation for this asset', 'error'); return;
@@ -152,7 +179,7 @@ export const UploadMediaModal = ({ isOpen, onClose, onUpload, parentAsset, corre
         onUpload(updated);
         toast('Variant uploaded successfully!', 'success');
       } else if (files.length === 1) {
-        const asset = await mediaService.uploadSingle(files[0], formData, setUploadProgress);
+        const asset = await mediaService.uploadSingle(files[0], { ...formData, campaignEventId: campaignEventId || formData.campaignEventId || undefined }, setUploadProgress);
         onUpload(asset);
         toast('Media uploaded successfully!', 'success');
       } else {
@@ -302,7 +329,7 @@ export const UploadMediaModal = ({ isOpen, onClose, onUpload, parentAsset, corre
 
         {/* Form Fields */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-          <Input label="Title" placeholder="e.g. Summer Campaign Hero" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
+          <Input label="Title *" placeholder="Auto-generated from file name (editable)" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} spellCheck />
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Category</label>
             <select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value as MediaCategory })} className="w-full h-12 bg-background border border-border rounded-xl px-4 text-sm text-text outline-none focus:border-primary/50 transition-all">
@@ -312,7 +339,7 @@ export const UploadMediaModal = ({ isOpen, onClose, onUpload, parentAsset, corre
               <option value="Graphics">Graphics</option>
             </select>
           </div>
-          <Input label="Tags" placeholder="summer, campaign, 2024 (comma separated)" value={formData.tags} onChange={(e) => setFormData({ ...formData, tags: e.target.value })} />
+          <Input label="Tags * (comma separated)" placeholder="summer, campaign, 2024" value={formData.tags} onChange={(e) => setFormData({ ...formData, tags: e.target.value })} />
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Visibility</label>
             <select value={formData.visibility} onChange={(e) => setFormData({ ...formData, visibility: e.target.value as MediaVisibility })} className="w-full h-12 bg-background border border-border rounded-xl px-4 text-sm text-text outline-none focus:border-primary/50 transition-all">
@@ -340,16 +367,36 @@ export const UploadMediaModal = ({ isOpen, onClose, onUpload, parentAsset, corre
               </select>
             </div>
           )}
-          {/* Target Date — which week/date this asset is for */}
+          {/* Campaign Event — agency context, when not pre-filled */}
+          {isAgency && !parentAsset && !campaignEventId && campaignEvents.length > 0 && (
+            <div className="space-y-1.5 sm:col-span-2">
+              <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Campaign Event (optional)</label>
+              <select
+                value={formData.campaignEventId || ''}
+                onChange={(e) => setFormData({ ...formData, campaignEventId: e.target.value })}
+                className="w-full h-12 bg-background border border-border rounded-xl px-4 text-sm text-text outline-none focus:border-primary/50 transition-all"
+              >
+                <option value="">None</option>
+                {campaignEvents.map((ev: any) => (
+                  <option key={ev.id} value={ev.id}>{ev.title}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          {/* Target Date — required, read-only if pre-filled from campaign event */}
           {!parentAsset && (
             <div className="space-y-1.5 sm:col-span-2">
-              <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Target Date <span className="text-red-400">*</span> (week this asset is for)</label>
+              <label className="text-xs font-bold text-text-muted uppercase tracking-wider">
+                Target Date <span className="text-red-400">*</span> (week this asset is for)
+                {propTargetDate && <span className="ml-2 text-primary font-normal normal-case">(set by campaign event)</span>}
+              </label>
               <input
                 type="date"
                 value={formData.targetDate}
-                onChange={(e) => setFormData({ ...formData, targetDate: e.target.value })}
+                onChange={(e) => !propTargetDate && setFormData({ ...formData, targetDate: e.target.value })}
+                readOnly={!!propTargetDate}
                 required
-                className="w-full h-12 bg-background border border-border rounded-xl px-4 text-sm text-text outline-none focus:border-primary/50 transition-all"
+                className={`w-full h-12 bg-background border border-border rounded-xl px-4 text-sm text-text outline-none focus:border-primary/50 transition-all ${propTargetDate ? 'opacity-70 cursor-not-allowed' : ''}`}
               />
               <p className="text-[10px] text-text-muted">Set the week this asset is intended for — helps filter by this week or next week.</p>
             </div>

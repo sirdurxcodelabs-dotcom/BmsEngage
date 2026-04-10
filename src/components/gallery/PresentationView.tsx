@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   X, ChevronLeft, ChevronRight, MessageSquare, AlertCircle,
   Send, CheckCircle2, User, Building2, Layers, Clock,
-  Trash2, Reply, Smile, Check,
+  Trash2, Reply, Smile, Check, History,
 } from 'lucide-react';
 import { MediaAsset } from '../../types/media';
 import { cn } from '../../lib/utils';
@@ -13,7 +13,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { usePermissions } from '../../hooks/usePermissions';
 import {
   addComment, deleteComment, addCorrection, resolveCorrection,
-  deleteCorrection, replyToComment, reactToComment,
+  deleteCorrection, replyToComment, reactToComment, approveAsset,
 } from '../../services/mediaService';
 
 interface PresentationViewProps {
@@ -32,6 +32,7 @@ export const PresentationView = ({ assets, initialIndex = 0, onClose, onAssetUpd
   const [index, setIndex] = useState(initialIndex);
   const [panelTab, setPanelTab] = useState<PanelTab>('comments');
   const [localAssets, setLocalAssets] = useState<MediaAsset[]>(assets);
+  const [activeVariantId, setActiveVariantId] = useState<string | null>(null); // null = original
   const [commentText, setCommentText] = useState('');
   const [correctionText, setCorrectionText] = useState('');
   const [correctionTimestamp, setCorrectionTimestamp] = useState('');
@@ -39,20 +40,34 @@ export const PresentationView = ({ assets, initialIndex = 0, onClose, onAssetUpd
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
   const [showEmojiFor, setShowEmojiFor] = useState<string | null>(null);
+  const [approvingStatus, setApprovingStatus] = useState<'approved' | 'rejected' | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
-  const { canComment, canRequestCorrection } = usePermissions();
+  const { canComment, canRequestCorrection, canApproveAsset } = usePermissions();
 
   const asset = localAssets[index];
 
-  // Latest version of the asset
-  const displayAsset = React.useMemo(() => {
-    if (!asset) return null;
-    if (asset.variants.length === 0) return asset;
+  // Sorted variants — latest first
+  const sortedVariants = React.useMemo(() => {
+    if (!asset) return [];
     return [...asset.variants].sort((a, b) =>
       new Date(b.metadata.createdDate).getTime() - new Date(a.metadata.createdDate).getTime()
-    )[0];
+    );
   }, [asset]);
+
+  // Active display: selected variant or latest or original
+  const displayAsset = React.useMemo(() => {
+    if (!asset) return null;
+    if (activeVariantId) {
+      const v = asset.variants.find(v => v.id === activeVariantId);
+      if (v) return v;
+    }
+    if (sortedVariants.length > 0) return sortedVariants[0];
+    return asset;
+  }, [asset, activeVariantId, sortedVariants]);
+
+  // Reset variant selection when switching assets
+  useEffect(() => { setActiveVariantId(null); }, [index]);
 
   const startupInfo = asset?.startupId ? startups.find(s => s.id === asset.startupId) ?? null : null;
   const startupName = startupInfo?.name ?? null;
@@ -132,10 +147,20 @@ export const PresentationView = ({ assets, initialIndex = 0, onClose, onAssetUpd
     catch { toast('Failed to delete revision', 'error'); }
   };
 
+  const handleApprove = async (status: 'approved' | 'rejected') => {
+    if (!asset) return;
+    setApprovingStatus(status);
+    try {
+      const updated = await approveAsset(asset.id, status);
+      sync(updated);
+      toast(status === 'approved' ? 'Asset approved ✅' : 'Asset rejected', status === 'approved' ? 'success' : 'info');
+    } catch { toast('Failed to update approval', 'error'); }
+    finally { setApprovingStatus(null); }
+  };
+
   if (!asset || !displayAsset) return null;
 
   const openRevisions = asset.corrections.filter(c => c.status === 'open');
-  const versionNumber = asset.variants.length + 1;
 
   return (
     <div className="fixed inset-0 z-[60] bg-black flex flex-col lg:flex-row">
@@ -224,14 +249,36 @@ export const PresentationView = ({ assets, initialIndex = 0, onClose, onAssetUpd
                   </span>
                 )}
                 <span className="flex items-center gap-1.5">
-                  <Layers size={13} /> v{versionNumber}.0
+                  <Layers size={13} /> v{asset.variants.length + 1} total
                 </span>
                 <span className="flex items-center gap-1.5">
                   <Clock size={13} /> {new Date(asset.metadata.createdDate).toLocaleDateString()}
                 </span>
               </div>
+
+              {/* Variant selector */}
+              {sortedVariants.length > 0 && (
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                  <span className="text-[10px] text-white/40 font-bold uppercase tracking-widest flex items-center gap-1">
+                    <History size={10} /> Versions:
+                  </span>
+                  <button onClick={() => setActiveVariantId(null)}
+                    className={cn('px-2 py-0.5 rounded-full text-[9px] font-black uppercase transition-all',
+                      !activeVariantId ? 'bg-primary text-white' : 'bg-white/10 text-white/60 hover:bg-white/20')}>
+                    Original
+                  </button>
+                  {sortedVariants.map((v, i) => (
+                    <button key={v.id} onClick={() => setActiveVariantId(v.id!)}
+                      className={cn('px-2 py-0.5 rounded-full text-[9px] font-black uppercase transition-all',
+                        activeVariantId === v.id ? 'bg-primary text-white' : 'bg-white/10 text-white/60 hover:bg-white/20')}>
+                      v{v.version}.0 {i === 0 ? '(Latest)' : ''}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-            <div className="flex items-center gap-2">
+
+            <div className="flex items-center gap-2 flex-wrap">
               {/* Approval badge */}
               <span className={cn('px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest',
                 asset.approvalStatus === 'approved' ? 'bg-emerald-500/20 text-emerald-400' :
@@ -240,6 +287,25 @@ export const PresentationView = ({ assets, initialIndex = 0, onClose, onAssetUpd
               )}>
                 {asset.approvalStatus === 'pending' ? 'Pending' : asset.approvalStatus}
               </span>
+
+              {/* Approve / Reject buttons — executives/production/marketing */}
+              {canApproveAsset && (
+                <>
+                  {asset.approvalStatus !== 'approved' && (
+                    <button onClick={() => handleApprove('approved')} disabled={approvingStatus !== null}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-40">
+                      <CheckCircle2 size={12} /> Approve
+                    </button>
+                  )}
+                  {asset.approvalStatus !== 'rejected' && (
+                    <button onClick={() => handleApprove('rejected')} disabled={approvingStatus !== null}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-40">
+                      <X size={12} /> Reject
+                    </button>
+                  )}
+                </>
+              )}
+
               {openRevisions.length > 0 && (
                 <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-orange-500/20 text-orange-400">
                   {openRevisions.length} Open Revision{openRevisions.length > 1 ? 's' : ''}

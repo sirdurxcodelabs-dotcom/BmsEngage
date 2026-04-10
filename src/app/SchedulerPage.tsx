@@ -1,7 +1,7 @@
 ﻿import { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon,
-  Clock, List, Loader2, Image as ImageIcon,
+  Clock, List, Loader2, Image as ImageIcon, ChevronDown,
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { cn } from '../lib/utils';
@@ -21,6 +21,8 @@ import { postService, ScheduledPost } from '../services/postService';
 import { MediaAsset } from '../types/media';
 import { SocialPost } from '../types/social';
 import { usePermissions } from '../hooks/usePermissions';
+import { campaignEventService, CampaignEvent } from '../services/campaignEventService';
+import { useAuth } from '../contexts/AuthContext';
 
 type ViewType = 'Monthly' | 'Weekly';
 type SchedulerTab = 'assets' | 'posts';
@@ -77,27 +79,39 @@ export default function SchedulerPage() {
   const [selectedPost, setSelectedPost] = useState<SocialPost | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [campaignEvents, setCampaignEvents] = useState<CampaignEvent[]>([]);
+  const [activeCampaignEvent, setActiveCampaignEvent] = useState<string>('all');
   const navigate = useNavigate();
   const { toast } = useToast();
   const { canViewAsset } = usePermissions();
+  const { user } = useAuth();
+  const isAgency = user?.activeContext === 'agency';
 
   const load = useCallback(async () => {
     setIsLoading(true);
     try {
       if (tab === 'assets' && canViewAsset) {
-        setAllAssets(await mediaService.getMedia());
+        const [assets, events] = await Promise.all([
+          mediaService.getMedia(),
+          isAgency ? campaignEventService.list() : Promise.resolve([]),
+        ]);
+        setAllAssets(assets);
+        setCampaignEvents(events);
       } else if (tab === 'posts') {
         setPosts(await postService.getAll());
       }
     } catch { /* silent */ }
     finally { setIsLoading(false); }
-  }, [tab, canViewAsset]);
+  }, [tab, canViewAsset, isAgency]);
 
   useEffect(() => { load(); }, [load]);
 
   const assetsByDate = useMemo(() => {
     const m: Record<string, MediaAsset[]> = {};
-    allAssets.forEach(a => {
+    const filtered = activeCampaignEvent === 'all'
+      ? allAssets
+      : allAssets.filter(a => (a as any).campaignEventId === activeCampaignEvent);
+    filtered.forEach(a => {
       if (a.targetDate) {
         const k = format(new Date(a.targetDate), 'yyyy-MM-dd');
         if (!m[k]) m[k] = [];
@@ -105,7 +119,7 @@ export default function SchedulerPage() {
       }
     });
     return m;
-  }, [allAssets]);
+  }, [allAssets, activeCampaignEvent]);
 
   const postsByDate = useMemo(() => {
     const m: Record<string, ScheduledPost[]> = {};
@@ -294,17 +308,36 @@ export default function SchedulerPage() {
               {view === 'Monthly' ? format(currentDate, 'MMMM yyyy') : `Week of ${format(startOfWeek(currentDate, { weekStartsOn: 1 }), 'MMM d')}`}
             </h2>
           </div>
-          <div className="flex gap-1 p-1 bg-white/5 rounded-xl border border-white/10">
-            <button onClick={() => setTab('assets')}
-              className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all',
-                tab === 'assets' ? 'bg-primary text-white' : 'text-text-muted hover:text-text')}>
-              <ImageIcon size={13} /> Assets
-            </button>
-            <button onClick={() => setTab('posts')}
-              className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all',
-                tab === 'posts' ? 'bg-primary text-white' : 'text-text-muted hover:text-text')}>
-              <CalendarIcon size={13} /> Posts
-            </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex gap-1 p-1 bg-white/5 rounded-xl border border-white/10">
+              <button onClick={() => setTab('assets')}
+                className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all',
+                  tab === 'assets' ? 'bg-primary text-white' : 'text-text-muted hover:text-text')}>
+                <ImageIcon size={13} /> Assets
+              </button>
+              <button onClick={() => setTab('posts')}
+                className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all',
+                  tab === 'posts' ? 'bg-primary text-white' : 'text-text-muted hover:text-text')}>
+                <CalendarIcon size={13} /> Posts
+              </button>
+            </div>
+
+            {/* Campaign Event filter — assets tab + agency context only */}
+            {tab === 'assets' && isAgency && campaignEvents.length > 0 && (
+              <div className="relative">
+                <select
+                  value={activeCampaignEvent}
+                  onChange={e => setActiveCampaignEvent(e.target.value)}
+                  className="h-9 bg-card border border-border rounded-xl pl-3 pr-8 text-xs font-bold text-text outline-none focus:border-primary/50 appearance-none transition-all"
+                >
+                  <option value="all">All Events</option>
+                  {campaignEvents.map(ev => (
+                    <option key={ev.id} value={ev.id}>{ev.title}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" size={12} />
+              </div>
+            )}
           </div>
         </div>
 

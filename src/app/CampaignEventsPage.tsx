@@ -10,6 +10,9 @@ import { format } from 'date-fns';
 import { campaignEventService, CampaignEvent } from '../services/campaignEventService';
 import { CampaignEventDetailModal } from '../components/campaigns/CampaignEventDetailModal';
 import { GlobalCalendarPanel } from '../components/campaigns/GlobalCalendarPanel';
+import { useAuth } from '../contexts/AuthContext';
+
+const EXECUTIVE_ROLES = ['owner', 'ceo', 'coo', 'creative_director', 'head_of_production'];
 import { useSearchParams } from 'react-router-dom';
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -30,6 +33,8 @@ export default function CampaignEventsPage() {
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ title: '', category: 'General', date: '', region: 'Global', tags: '', recurrence: 'none', isMonthlyEvent: false });
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isExecutive = EXECUTIVE_ROLES.includes(user?.agencyRole || '');
   const [searchParams] = useSearchParams();
 
   const load = useCallback(async () => {
@@ -91,9 +96,11 @@ export default function CampaignEventsPage() {
           <button onClick={load} className="p-2.5 rounded-xl border border-border text-text-muted hover:text-text hover:border-primary/30 transition-all">
             <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
           </button>
-          <Button onClick={() => setIsCreateOpen(true)} className="h-10 px-4 rounded-xl font-bold shadow-xl shadow-primary/30">
-            <Plus size={15} className="mr-2" /> New Event
-          </Button>
+          {isExecutive && (
+            <Button onClick={() => setIsCreateOpen(true)} className="h-10 px-4 rounded-xl font-bold shadow-xl shadow-primary/30">
+              <Plus size={15} className="mr-2" /> New Event
+            </Button>
+          )}
         </div>
       </div>
 
@@ -104,11 +111,13 @@ export default function CampaignEventsPage() {
           className="w-full h-11 bg-card border border-border rounded-xl pl-11 pr-4 text-sm text-text placeholder:text-text-muted outline-none focus:border-primary/50 transition-all" />
       </div>
 
-      {/* Global Calendar Panel */}
-      <GlobalCalendarPanel
-        existingEvents={events}
-        onAdded={event => setEvents(prev => [event, ...prev])}
-      />
+      {/* Global Calendar Panel — executives only */}
+      {isExecutive && (
+        <GlobalCalendarPanel
+          existingEvents={events}
+          onAdded={event => setEvents(prev => [event, ...prev])}
+        />
+      )}
 
       {/* Events grid */}
       {isLoading ? (
@@ -120,7 +129,7 @@ export default function CampaignEventsPage() {
           </div>
           <h3 className="text-lg font-bold text-text mb-2">No campaign events yet</h3>
           <p className="text-sm text-text-muted mb-6">Create your first event to start planning campaigns.</p>
-          <Button onClick={() => setIsCreateOpen(true)}>Create First Event</Button>
+          {isExecutive && <Button onClick={() => setIsCreateOpen(true)}>Create First Event</Button>}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

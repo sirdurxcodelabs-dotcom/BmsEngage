@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useToast } from '../ui/Toast';
+import { useAuth } from '../../contexts/AuthContext';
 import { format } from 'date-fns';
 import {
   CampaignEvent, EventTemplate, ScheduledCampaign,
@@ -36,6 +37,9 @@ interface Props {
 
 export const CampaignEventDetailModal = ({ isOpen, onClose, event }: Props) => {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const EXECUTIVE_ROLES = ['owner', 'ceo', 'coo', 'creative_director', 'head_of_production'];
+  const isExecutive = EXECUTIVE_ROLES.includes(user?.agencyRole || '');
   const [tab, setTab] = React.useState<Tab>('overview');
   const [templates, setTemplates] = React.useState<EventTemplate[]>([]);
   const [campaigns, setCampaigns] = React.useState<ScheduledCampaign[]>([]);
@@ -174,9 +178,11 @@ export const CampaignEventDetailModal = ({ isOpen, onClose, event }: Props) => {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <p className="text-xs text-text-muted">Templates help you quickly create campaigns for this event.</p>
-                <Button variant="outline" size="sm" onClick={() => setShowAddTemplate(v => !v)} className="h-8">
-                  <Plus size={13} className="mr-1" /> Add Template
-                </Button>
+                {isExecutive && (
+                  <Button variant="outline" size="sm" onClick={() => setShowAddTemplate(v => !v)} className="h-8">
+                    <Plus size={13} className="mr-1" /> Add Template
+                  </Button>
+                )}
               </div>
               <AnimatePresence>
                 {showAddTemplate && (
@@ -196,7 +202,7 @@ export const CampaignEventDetailModal = ({ isOpen, onClose, event }: Props) => {
                 <div className="py-10 text-center text-text-muted text-sm">No templates yet. Add one above.</div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {templates.map(t => <EventTemplateCard key={t.id} template={t} onUse={handleUseTemplate} onDelete={handleDeleteTemplate} />)}
+                  {templates.map(t => <EventTemplateCard key={t.id} template={t} onUse={isExecutive ? handleUseTemplate : () => {}} onDelete={isExecutive ? handleDeleteTemplate : undefined} />)}
                 </div>
               )}
             </div>
@@ -205,9 +211,11 @@ export const CampaignEventDetailModal = ({ isOpen, onClose, event }: Props) => {
           {/* Campaigns */}
           {!loading && tab === 'campaigns' && (
             <div className="space-y-3">
-              <Button onClick={() => { setSelectedTemplate(null); setSchedulerOpen(true); }} className="w-full sm:w-auto shadow-lg shadow-primary/30">
-                <Plus size={14} className="mr-2" /> New Campaign
-              </Button>
+              {isExecutive && (
+                <Button onClick={() => { setSelectedTemplate(null); setSchedulerOpen(true); }} className="w-full sm:w-auto shadow-lg shadow-primary/30">
+                  <Plus size={14} className="mr-2" /> New Campaign
+                </Button>
+              )}
               {campaigns.length === 0 ? (
                 <div className="py-10 text-center text-text-muted text-sm">No campaigns yet.</div>
               ) : campaigns.map(c => (

@@ -23,7 +23,10 @@ export default function StartupsPage() {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  const isOwner = user?.activeContext === 'agency' && user?.agencyRole === 'owner';
+  const EXECUTIVE_ROLES = ['owner', 'ceo', 'coo', 'creative_director', 'head_of_production'];
+  const isOwner = user?.activeContext === 'agency' && (
+    user?.agencyRole === 'owner' || EXECUTIVE_ROLES.includes(user?.agencyRole || '')
+  );
 
   useEffect(() => { load(); }, []);
 

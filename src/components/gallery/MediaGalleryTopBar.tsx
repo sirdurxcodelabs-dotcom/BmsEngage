@@ -1,10 +1,12 @@
 import * as React from 'react';
-import { Search, Plus, ChevronDown, LayoutGrid, ArrowUpDown, X, Building2, Calendar } from 'lucide-react';
+import { Search, Plus, ChevronDown, LayoutGrid, ArrowUpDown, X, Building2, Calendar, Check } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import { Button } from '../ui/Button';
 import { MediaCategory } from '../../types/media';
 import { cn } from '../../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { Startup } from '../../services/startupService';
+import { StartupAvatar } from './StartupSelect';
 import { startOfWeek, endOfWeek, addWeeks, format } from 'date-fns';
 
 interface MediaGalleryTopBarProps {
@@ -165,18 +167,208 @@ export const MediaGalleryTopBar = ({
 
         {/* Startup Filter */}
         {isAgencyContext && startups.length > 0 && (
-          <div className="relative group">
-            <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-primary transition-colors" size={18} />
-            <select value={activeStartup} onChange={(e) => onStartupChange(e.target.value)}
-              className="w-full h-12 bg-card border border-border rounded-xl pl-12 pr-10 text-sm text-text appearance-none outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all cursor-pointer">
-              <option value="All">All Startups</option>
-              <option value="none">No Startup</option>
-              {startups.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
-            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" size={16} />
-          </div>
+          <GalleryStartupFilter
+            startups={startups}
+            value={activeStartup}
+            onChange={onStartupChange}
+          />
         )}
       </div>
     </div>
   );
 };
+
+// ─── Gallery startup filter — portal-based, shows logo + name ────────────────
+// value: 'All' | 'none' | startupId
+function GalleryStartupFilter({
+  startups,
+  value,
+  onChange,
+}: {
+  startups: Startup[];
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const [search, setSearch] = React.useState('');
+  const [panelStyle, setPanelStyle] = React.useState<React.CSSProperties>({});
+  const triggerRef = React.useRef<HTMLButtonElement>(null);
+  const searchRef = React.useRef<HTMLInputElement>(null);
+
+  const selectedStartup = startups.find(s => s.id === value) ?? null;
+
+  const filtered = React.useMemo(() => {
+    if (!search.trim()) return startups;
+    const q = search.toLowerCase();
+    return startups.filter(s => s.name.toLowerCase().includes(q));
+  }, [startups, search]);
+
+  const updatePosition = React.useCallback(() => {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const panelHeight = Math.min(320, startups.length * 52 + 100);
+    const openUpward = spaceBelow < panelHeight && spaceAbove > spaceBelow;
+    setPanelStyle({
+      position: 'fixed',
+      left: rect.left,
+      width: rect.width,
+      zIndex: 9999,
+      ...(openUpward
+        ? { bottom: window.innerHeight - rect.top + 4 }
+        : { top: rect.bottom + 4 }),
+    });
+  }, [startups.length]);
+
+  const handleOpen = () => { updatePosition(); setOpen(true); };
+
+  React.useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (triggerRef.current?.contains(target)) return;
+      if (document.getElementById('gallery-startup-panel')?.contains(target)) return;
+      setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  React.useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, []);
+
+  React.useEffect(() => {
+    if (!open) return;
+    const handler = () => updatePosition();
+    window.addEventListener('scroll', handler, true);
+    window.addEventListener('resize', handler);
+    return () => { window.removeEventListener('scroll', handler, true); window.removeEventListener('resize', handler); };
+  }, [open, updatePosition]);
+
+  React.useEffect(() => {
+    if (open) setTimeout(() => searchRef.current?.focus(), 40);
+    else setSearch('');
+  }, [open]);
+
+  const handleSelect = (v: string) => { onChange(v); setOpen(false); };
+
+  const SPECIAL = [
+    { value: 'All',  label: 'All Startups' },
+    { value: 'none', label: 'No Startup' },
+  ];
+
+  return (
+    <>
+      <button
+        ref={triggerRef}
+        type="button"
+        onClick={open ? () => setOpen(false) : handleOpen}
+        className={cn(
+          'w-full h-12 flex items-center gap-3 px-4 rounded-xl border text-sm transition-all duration-200 text-left',
+          'bg-card border-border hover:border-primary/40',
+          open && 'border-primary/50 ring-2 ring-primary/10'
+        )}
+      >
+        {selectedStartup ? (
+          <>
+            <StartupAvatar startup={selectedStartup} size={24} />
+            <span className="flex-1 truncate text-text font-medium">{selectedStartup.name}</span>
+          </>
+        ) : (
+          <>
+            <Building2 size={18} className="text-text-muted shrink-0" />
+            <span className="flex-1 text-text-muted text-sm">
+              {value === 'none' ? 'No Startup' : 'All Startups'}
+            </span>
+          </>
+        )}
+        <ChevronDown size={15} className={cn('text-text-muted shrink-0 transition-transform duration-200', open && 'rotate-180')} />
+      </button>
+
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {open && (
+            <motion.div
+              id="gallery-startup-panel"
+              initial={{ opacity: 0, y: -6, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -6, scale: 0.97 }}
+              transition={{ duration: 0.14, ease: [0.22, 1, 0.36, 1] }}
+              style={panelStyle}
+              className="bg-card border border-border rounded-2xl shadow-2xl shadow-black/40 overflow-hidden"
+            >
+              {/* Search */}
+              <div className="p-2 border-b border-border">
+                <div className="relative">
+                  <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
+                  <input
+                    ref={searchRef}
+                    type="text"
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    placeholder="Search startups…"
+                    className="w-full h-9 pl-8 pr-8 rounded-lg bg-white/5 border border-border text-sm text-text placeholder:text-text-muted/60 outline-none focus:border-primary/50 transition-all"
+                  />
+                  {search && (
+                    <button type="button" onClick={() => setSearch('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-colors">
+                      <X size={12} />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="max-h-60 overflow-y-auto py-1">
+                {/* All / None special options */}
+                {!search && SPECIAL.map(opt => (
+                  <button key={opt.value} type="button" onClick={() => handleSelect(opt.value)}
+                    className={cn(
+                      'w-full flex items-center gap-3 px-3.5 py-2.5 text-sm transition-colors hover:bg-white/5',
+                      value === opt.value ? 'text-primary' : 'text-text-muted'
+                    )}>
+                    <div className="w-6 h-6 rounded-lg bg-white/8 border border-border flex items-center justify-center shrink-0">
+                      <Building2 size={12} className="text-text-muted" />
+                    </div>
+                    <span className="flex-1 text-left">{opt.label}</span>
+                    {value === opt.value && <Check size={13} className="text-primary shrink-0" />}
+                  </button>
+                ))}
+
+                {!search && <div className="mx-3 border-t border-border/50" />}
+
+                {/* Startup options */}
+                {filtered.length === 0 ? (
+                  <div className="py-6 text-center">
+                    <p className="text-xs text-text-muted">No startups match "{search}"</p>
+                  </div>
+                ) : (
+                  filtered.map(s => {
+                    const isSelected = value === s.id;
+                    return (
+                      <button key={s.id} type="button" onClick={() => handleSelect(s.id)}
+                        className={cn(
+                          'w-full flex items-center gap-3 px-3.5 py-2.5 text-sm transition-all hover:bg-white/5',
+                          isSelected && 'bg-primary/10 border-l-2 border-primary'
+                        )}>
+                        <StartupAvatar startup={s} size={28} />
+                        <span className={cn('flex-1 truncate font-medium', isSelected ? 'text-primary' : 'text-text')}>
+                          {s.name}
+                        </span>
+                        {isSelected && <Check size={13} className="text-primary shrink-0" />}
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
+    </>
+  );
+}

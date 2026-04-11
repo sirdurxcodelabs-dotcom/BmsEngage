@@ -41,7 +41,6 @@ export default function GalleryPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [startups, setStartups] = useState<Startup[]>([]);
   const { toast } = useToast();
-  const { canUploadAsset } = usePermissions();
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const isAgency = user?.activeContext === 'agency';
@@ -89,7 +88,9 @@ export default function GalleryPage() {
   const [presentationOpen, setPresentationOpen] = useState(false);
   const [presentationIndex, setPresentationIndex] = useState(0);
 
-  // Presentation mode: agency context + executive/production/marketing roles
+  const { canUploadAsset, isCreativeRole } = usePermissions();
+
+  // Full presentation mode: agency context + executive/production/marketing roles
   const canPresent = isAgency && (() => {
     const role = user?.agencyRole;
     if (!role) return false;
@@ -97,6 +98,24 @@ export default function GalleryPage() {
     const execRoles = [...ROLE_GROUPS.executive, ...ROLE_GROUPS.production, ...ROLE_GROUPS.marketing] as string[];
     return execRoles.includes(role);
   })();
+
+  // Creative presentation mode: creative roles in agency context — shows only their own uploads
+  const canCreativePresent = isAgency && isCreativeRole;
+
+  // Assets uploaded by the current user that fall in the current week (Creative presentation mode)
+  const myThisWeekAssets = useMemo(() => {
+    if (!user?.id) return [];
+    const now = new Date();
+    const weekStart = startOfWeek(now, { weekStartsOn: 1 });
+    const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
+    return media.filter(a => {
+      const isOwn = a.ownerId === user.id || a.uploadedBy === user.name;
+      if (!isOwn) return false;
+      if (!a.targetDate) return false;
+      const td = new Date(a.targetDate);
+      return td >= weekStart && td <= weekEnd;
+    });
+  }, [media, user]);
 
   // Assets whose targetDate falls in the current week (Mon–Sun)
   const thisWeekAssets = useMemo(() => {
@@ -215,19 +234,36 @@ export default function GalleryPage() {
 
   return (
     <div className="space-y-4 sm:space-y-6 pb-16 sm:pb-20">
-      {/* Presentation tab button — agency + executive/production/marketing only */}
-      {canPresent && (
+      {/* Presentation tab button — executive/production/marketing (full) OR creative (own assets only) */}
+      {(canPresent || canCreativePresent) && (
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => { setPresentationIndex(0); setPresentationOpen(true); }}
-              disabled={thisWeekAssets.length === 0}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white font-bold text-sm shadow-lg shadow-primary/30 hover:bg-primary/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <Monitor size={16} /> Presentation Mode
-            </button>
-            {thisWeekAssets.length > 0 && (
+          <div className="flex items-center gap-3">
+            {/* Full executive presentation mode */}
+            {canPresent && (
+              <button
+                onClick={() => { setPresentationIndex(0); setPresentationOpen(true); }}
+                disabled={thisWeekAssets.length === 0}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white font-bold text-sm shadow-lg shadow-primary/30 hover:bg-primary/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <Monitor size={16} /> Presentation Mode
+              </button>
+            )}
+            {/* Creative presentation mode — own uploads this week only */}
+            {canCreativePresent && !canPresent && (
+              <button
+                onClick={() => { setPresentationIndex(0); setPresentationOpen(true); }}
+                disabled={myThisWeekAssets.length === 0}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white font-bold text-sm shadow-lg shadow-primary/30 hover:bg-primary/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                title="View your uploaded assets for this week in presentation mode"
+              >
+                <Monitor size={16} /> My Presentation
+              </button>
+            )}
+            {canPresent && thisWeekAssets.length > 0 && (
               <span className="text-xs text-text-muted">{thisWeekAssets.length} asset{thisWeekAssets.length !== 1 ? 's' : ''} this week</span>
+            )}
+            {canCreativePresent && !canPresent && myThisWeekAssets.length > 0 && (
+              <span className="text-xs text-text-muted">{myThisWeekAssets.length} of your asset{myThisWeekAssets.length !== 1 ? 's' : ''} this week</span>
             )}
           </div>
         </div>
@@ -385,13 +421,14 @@ export default function GalleryPage() {
       />
 
       {/* Presentation mode — full-screen overlay */}
-      {presentationOpen && thisWeekAssets.length > 0 && (
+      {presentationOpen && (canPresent ? thisWeekAssets.length > 0 : myThisWeekAssets.length > 0) && (
         <PresentationView
-          assets={thisWeekAssets}
+          assets={canPresent ? thisWeekAssets : myThisWeekAssets}
           initialIndex={presentationIndex}
           onClose={() => setPresentationOpen(false)}
           onAssetUpdate={(updated) => setMedia(prev => prev.map(m => m.id === updated.id ? updated : m))}
           startups={startups.map(s => ({ id: s.id, name: s.name, logo: s.logo ?? null }))}
+          isCreativeMode={!canPresent && canCreativePresent}
         />
       )}
     </div>

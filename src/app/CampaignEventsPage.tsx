@@ -23,7 +23,9 @@ const CATEGORY_COLORS: Record<string, string> = {
   General: 'bg-white/10 text-text-muted',
 };
 
-export default function CampaignEventsPage() {
+import { AccessGuard } from '../components/AccessGuard';
+
+function CampaignEventsPageInner() {
   const [events, setEvents] = useState<CampaignEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -214,5 +216,13 @@ export default function CampaignEventsPage() {
       {/* Event Detail Modal */}
       <CampaignEventDetailModal isOpen={isDetailOpen} onClose={() => setIsDetailOpen(false)} event={selectedEvent} />
     </div>
+  );
+}
+
+export default function CampaignEventsPage() {
+  return (
+    <AccessGuard feature="campaigns">
+      <CampaignEventsPageInner />
+    </AccessGuard>
   );
 }

@@ -1,99 +1,201 @@
+import { useState } from 'react';
 import { motion } from 'motion/react';
 import { MarketingNavbar } from '../../components/layout/MarketingNavbar';
-import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
-import { Mail, Phone, MapPin, MessageSquare, ArrowRight } from 'lucide-react';
+import { Mail, MessageSquare, ArrowRight, CheckCircle2, Loader2 } from 'lucide-react';
+import { FadeUp, GradientText } from '../../components/marketing/MarketingComponents';
+
+const inputCls = 'w-full h-11 px-4 rounded-xl border border-border bg-card text-text placeholder:text-text-muted text-sm outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/20 transition-all';
+const labelCls = 'block text-xs font-semibold text-text-muted uppercase tracking-wider mb-1.5';
 
 export default function ContactPage() {
-  return (
-    <div className="min-h-screen bg-background text-text selection:bg-primary/30 overflow-x-hidden">
-      <MarketingNavbar />
-      
-      <main className="pt-32 pb-20 px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-20 items-start">
-            {/* Left Side: Info */}
-            <div>
-              <motion.span 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-primary font-bold text-sm uppercase tracking-widest mb-4 block"
-              >
-                Contact Us
-              </motion.span>
-              <motion.h1 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="text-5xl md:text-7xl font-black tracking-tighter mb-8 leading-[0.9]"
-              >
-                Let's Build Your <span className="gradient-text">Media OS</span> Together.
-              </motion.h1>
-              <p className="text-xl text-white/50 mb-12">
-                Have questions about BMS Engage? Our team of media operations experts is ready to help you scale your agency.
-              </p>
+  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', company: '', message: '' });
+  const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
-              <div className="space-y-8">
-                {[
-                  { icon: Mail, label: "Email", value: "hello@bms-engage.com" },
-                  { icon: Phone, label: "Phone", value: "+1 (555) 000-0000" },
-                  { icon: MapPin, label: "Office", value: "Creative District, San Francisco, CA" }
-                ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-6 group">
-                    <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white/30 group-hover:text-primary group-hover:border-primary/30 transition-all">
-                      <item.icon size={24} />
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    await new Promise(r => setTimeout(r, 1200)); // simulate send
+    setLoading(false);
+    setSubmitted(true);
+  };
+
+  return (
+    <div className="min-h-screen bg-background text-text overflow-x-hidden">
+      <MarketingNavbar />
+
+      {/* ── Hero ─────────────────────────────────────────────────────────────── */}
+      <section className="relative pt-36 pb-16 px-6 overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-indigo-600/8 rounded-full blur-[100px]" />
+        </div>
+        <div className="max-w-7xl mx-auto">
+          <FadeUp>
+            <span className="inline-block text-xs font-bold uppercase tracking-widest text-indigo-400 mb-4 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20">
+              Contact us
+            </span>
+            <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6 leading-[1.05] text-text max-w-2xl mt-2">
+              Let's <GradientText>talk.</GradientText>
+            </h1>
+            <p className="text-lg md:text-xl text-text-muted leading-relaxed max-w-2xl">
+              Have questions about BMS Engage? Our team is ready to help you find the right plan and get started.
+            </p>
+          </FadeUp>
+        </div>
+      </section>
+
+      {/* ── Main content ─────────────────────────────────────────────────────── */}
+      <section className="pb-24 px-6">
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 md:gap-16 items-start">
+
+          {/* Left: Contact info */}
+          <div className="space-y-5">
+            {/* Email card */}
+            <FadeUp delay={0.05}>
+              <div className="group p-6 rounded-2xl bg-card border border-border hover:border-indigo-500/30 hover:shadow-lg hover:shadow-indigo-500/10 transition-all duration-300 flex items-start gap-4">
+                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/20 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                  <Mail size={18} className="text-indigo-400" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm text-text mb-1">Email us</p>
+                  <p className="text-text-muted text-sm">hello@bms-engage.com</p>
+                  <p className="text-text-muted text-sm">support@bms-engage.com</p>
+                </div>
+              </div>
+            </FadeUp>
+
+            {/* Live chat card */}
+            <FadeUp delay={0.1}>
+              <div className="group p-6 rounded-2xl bg-card border border-border hover:border-indigo-500/30 hover:shadow-lg hover:shadow-indigo-500/10 transition-all duration-300 flex items-start gap-4">
+                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/20 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                  <MessageSquare size={18} className="text-indigo-400" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm text-text mb-1">Live chat</p>
+                  <p className="text-text-muted text-sm">Available Monday–Friday, 9am–6pm WAT.</p>
+                  <p className="text-text-muted text-sm">No bots — real people who care.</p>
+                </div>
+              </div>
+            </FadeUp>
+
+            {/* Book a demo card */}
+            <FadeUp delay={0.15}>
+              <div className="p-6 rounded-2xl bg-card border border-border">
+                <h3 className="font-bold text-base text-text mb-2">Book a demo</h3>
+                <p className="text-text-muted text-sm leading-relaxed mb-5">
+                  Want a personalized walkthrough? Schedule a 30-minute demo with our product team and see exactly how BMS Engage can work for you.
+                </p>
+                <button className="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 shadow-lg shadow-indigo-500/25 transition-all hover:scale-[1.01]">
+                  Schedule a demo <ArrowRight size={15} />
+                </button>
+              </div>
+            </FadeUp>
+
+            {/* Human support callout */}
+            <FadeUp delay={0.2}>
+              <div className="p-6 rounded-2xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-500/20">
+                <h3 className="font-bold text-sm text-text mb-2">Human support, worldwide</h3>
+                <p className="text-text-muted text-sm leading-relaxed">
+                  Our global Customer Advocacy team is spread across time zones to make sure help is always nearby. Whether you have a quick question or need technical support, we're here for you.
+                </p>
+              </div>
+            </FadeUp>
+          </div>
+
+          {/* Right: Form */}
+          <FadeUp delay={0.1}>
+            <div className="bg-card border border-border rounded-2xl p-8 shadow-xl shadow-black/10">
+              {submitted ? (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="text-center py-12"
+                >
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 flex items-center justify-center mx-auto mb-5">
+                    <CheckCircle2 size={28} className="text-indigo-400" />
+                  </div>
+                  <h3 className="text-xl font-bold text-text mb-2">Message sent!</h3>
+                  <p className="text-text-muted text-sm">We'll get back to you within one business day.</p>
+                </motion.div>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className={labelCls}>First name</label>
+                      <input
+                        type="text" required
+                        value={form.firstName}
+                        onChange={e => setForm({ ...form, firstName: e.target.value })}
+                        placeholder="Alex"
+                        className={inputCls}
+                      />
                     </div>
                     <div>
-                      <p className="text-[10px] text-white/30 uppercase tracking-widest font-bold mb-1">{item.label}</p>
-                      <p className="text-lg font-medium">{item.value}</p>
+                      <label className={labelCls}>Last name</label>
+                      <input
+                        type="text" required
+                        value={form.lastName}
+                        onChange={e => setForm({ ...form, lastName: e.target.value })}
+                        placeholder="Rivera"
+                        className={inputCls}
+                      />
                     </div>
                   </div>
-                ))}
-              </div>
 
-              <div className="mt-16 p-8 rounded-3xl bg-primary/10 border border-primary/20">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-                    <MessageSquare size={20} />
+                  <div>
+                    <label className={labelCls}>Work email</label>
+                    <input
+                      type="email" required
+                      value={form.email}
+                      onChange={e => setForm({ ...form, email: e.target.value })}
+                      placeholder="alex@agency.com"
+                      className={inputCls}
+                    />
                   </div>
-                  <h4 className="font-bold text-lg">Book a Demo</h4>
-                </div>
-                <p className="text-sm text-white/60 mb-6">Want a personalized walkthrough of the platform? Schedule a 30-minute demo with our product team.</p>
-                <Button className="w-full h-12">Schedule Demo <ArrowRight className="ml-2" size={18} /></Button>
-              </div>
+
+                  <div>
+                    <label className={labelCls}>Company</label>
+                    <input
+                      type="text"
+                      value={form.company}
+                      onChange={e => setForm({ ...form, company: e.target.value })}
+                      placeholder="Your agency name"
+                      className={inputCls}
+                    />
+                  </div>
+
+                  <div>
+                    <label className={labelCls}>How can we help?</label>
+                    <textarea
+                      required
+                      value={form.message}
+                      onChange={e => setForm({ ...form, message: e.target.value })}
+                      placeholder="Tell us about your team and what you're looking for..."
+                      rows={5}
+                      className="w-full px-4 py-3 rounded-xl border border-border bg-background text-text placeholder:text-text-muted text-sm outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/20 transition-all resize-none"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full h-12 inline-flex items-center justify-center gap-2 rounded-xl font-semibold text-sm text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 shadow-lg shadow-indigo-500/25 transition-all hover:scale-[1.01] disabled:opacity-60 disabled:pointer-events-none"
+                  >
+                    {loading ? (
+                      <><Loader2 size={16} className="animate-spin" /> Sending...</>
+                    ) : (
+                      <>Send message <ArrowRight size={15} /></>
+                    )}
+                  </button>
+                  <p className="text-center text-xs text-text-muted">
+                    By submitting, you agree to our privacy policy.
+                  </p>
+                </form>
+              )}
             </div>
-
-            {/* Right Side: Form */}
-            <motion.div 
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="bg-card border border-white/10 p-10 rounded-[40px] shadow-2xl relative"
-            >
-              <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-primary/5 blur-3xl rounded-full -z-10" />
-              
-              <form className="space-y-6">
-                <div className="grid grid-cols-2 gap-6">
-                  <Input label="First Name" placeholder="Alex" />
-                  <Input label="Last Name" placeholder="Rivera" />
-                </div>
-                <Input label="Work Email" type="email" placeholder="alex@agency.com" />
-                <Input label="Company Name" placeholder="BMS Engage Creative" />
-                
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-white/50 uppercase tracking-wider">How can we help?</label>
-                  <textarea 
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:border-primary/50 min-h-[150px] resize-none transition-all"
-                    placeholder="Tell us about your agency and what you're looking for..."
-                  />
-                </div>
-
-                <Button className="w-full h-14 text-lg">Send Message</Button>
-                <p className="text-center text-[10px] text-white/30 uppercase tracking-widest">By submitting this form, you agree to our privacy policy.</p>
-              </form>
-            </motion.div>
-          </div>
+          </FadeUp>
         </div>
-      </main>
+      </section>
     </div>
   );
 }

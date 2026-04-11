@@ -8,7 +8,9 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 
-export default function StartupsPage() {
+import { AccessGuard } from '../components/AccessGuard';
+
+function StartupsPageInner() {
   const [startups, setStartups] = useState<Startup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -283,5 +285,13 @@ export default function StartupsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function StartupsPage() {
+  return (
+    <AccessGuard feature="startups">
+      <StartupsPageInner />
+    </AccessGuard>
   );
 }

@@ -386,6 +386,7 @@ function NotificationsTab({ user, onRefresh, toast }: { user: UserType | null; o
     galleryAssets: false,
     postSchedule: false,
     systemUpdates: false,
+    campaignEvents: true,
   });
   const [saving, setSaving] = useState(false);
 
@@ -434,6 +435,12 @@ function NotificationsTab({ user, onRefresh, toast }: { user: UserType | null; o
       label: 'System Updates',
       desc: 'New feature announcements, maintenance notices, and platform updates.',
       icon: Zap,
+    },
+    {
+      key: 'campaignEvents' as const,
+      label: 'Campaign Events',
+      desc: 'Alerts when campaigns are created, updated, or deleted by your agency.',
+      icon: CheckCircle2,
     },
   ];
 
@@ -786,6 +793,7 @@ function AgencyTab({ user, onRefresh, toast }: { user: UserType | null; onRefres
         industry: user.agency.industry || '',
         teamSize: user.agency.teamSize || '',
         description: user.agency.description || '',
+        enableStartups: user.agency.enableStartups ?? false,
       });
     }
     fetchMembers();
@@ -989,6 +997,20 @@ function AgencyTab({ user, onRefresh, toast }: { user: UserType | null; onRefres
             <div className="md:col-span-2">
               <label className="text-[10px] font-black text-text-muted uppercase tracking-widest block mb-1">Description</label>
               <p className="text-sm text-text-muted leading-relaxed">{agency?.description || '—'}</p>
+            </div>
+            {/* Startups status — always visible in view mode */}
+            <div className="md:col-span-2 flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-2xl">
+              <div>
+                <p className="font-bold text-text text-sm">Startups</p>
+                <p className="text-xs text-text-muted mt-0.5">Show the Startups section in the sidebar and allow assigning assets to startups.</p>
+              </div>
+              <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest ${
+                agency?.enableStartups
+                  ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25'
+                  : 'bg-white/10 text-text-muted border border-white/10'
+              }`}>
+                {agency?.enableStartups ? 'Enabled' : 'Disabled'}
+              </span>
             </div>
           </motion.div>
         )}

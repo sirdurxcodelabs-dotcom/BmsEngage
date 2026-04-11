@@ -1,121 +1,141 @@
 import { motion } from 'motion/react';
 import { MarketingNavbar } from '../../components/layout/MarketingNavbar';
-import { Button } from '../../components/ui/Button';
-import { Layers, Calendar, Share2, BarChart3, Users, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Layers, Calendar, Share2, BarChart3, Users, Zap, CheckCircle2 } from 'lucide-react';
+import {
+  FadeUp, Section, SectionHeader, GradientText,
+  CTABanner,
+} from '../../components/marketing/MarketingComponents';
+
+const services = [
+  {
+    icon: Calendar,
+    label: 'PUBLISH',
+    title: 'Social Media Scheduling',
+    desc: 'Plan and automate your content distribution across all major platforms from a single, intuitive calendar.',
+    features: ['Visual content calendar', 'Cross-platform previews', 'Best-time-to-post AI', 'Automated recurring posts'],
+    gradient: 'from-indigo-500/15 to-purple-500/15',
+    border: 'hover:border-indigo-500/40',
+    glow: 'hover:shadow-indigo-500/10',
+  },
+  {
+    icon: Layers,
+    label: 'MEDIA',
+    title: 'Media Asset Management',
+    desc: 'Centralize all your creative assets in a high-performance, searchable gallery designed for media professionals.',
+    features: ['AI-powered auto-tagging', 'Bulk metadata editing', 'Version history tracking', 'Instant sharing links'],
+    gradient: 'from-purple-500/15 to-pink-500/15',
+    border: 'hover:border-purple-500/40',
+    glow: 'hover:shadow-purple-500/10',
+  },
+  {
+    icon: Share2,
+    label: 'CONNECT',
+    title: 'Multi-Platform Publishing',
+    desc: 'Direct integration with Instagram, TikTok, LinkedIn, and X. Publish content instantly or schedule for later.',
+    features: ['Direct API publishing', 'First comment automation', 'Platform-specific captions', 'Multi-account management'],
+    gradient: 'from-cyan-500/15 to-blue-500/15',
+    border: 'hover:border-cyan-500/40',
+    glow: 'hover:shadow-cyan-500/10',
+  },
+  {
+    icon: BarChart3,
+    label: 'ANALYZE',
+    title: 'Analytics & Reporting',
+    desc: 'Deep-dive into your performance metrics with customizable dashboards and automated client reports.',
+    features: ['Real-time engagement tracking', 'Competitor benchmarking', 'White-label reports', 'ROI calculation'],
+    gradient: 'from-emerald-500/15 to-teal-500/15',
+    border: 'hover:border-emerald-500/40',
+    glow: 'hover:shadow-emerald-500/10',
+  },
+  {
+    icon: Users,
+    label: 'COLLABORATE',
+    title: 'Team Workflow Management',
+    desc: 'Streamline collaboration between creators, managers, and clients with built-in approval workflows.',
+    features: ['Role-based permissions', 'Client approval portals', 'Internal commenting', 'Task assignment'],
+    gradient: 'from-orange-500/15 to-amber-500/15',
+    border: 'hover:border-orange-500/40',
+    glow: 'hover:shadow-orange-500/10',
+  },
+  {
+    icon: Zap,
+    label: 'AUTOMATE',
+    title: 'Campaign Automation',
+    desc: 'Plan and execute multi-platform campaigns with automated scheduling, notifications, and performance tracking.',
+    features: ['Campaign calendar', 'Automated notifications', 'Performance tracking', 'Multi-platform coordination'],
+    gradient: 'from-rose-500/15 to-pink-500/15',
+    border: 'hover:border-rose-500/40',
+    glow: 'hover:shadow-rose-500/10',
+  },
+];
 
 export default function ServicesPage() {
-  const services = [
-    {
-      icon: Layers,
-      title: "Media Asset Management",
-      desc: "Centralize all your creative assets in a high-performance, searchable gallery designed for media professionals.",
-      features: ["AI-powered auto-tagging", "Bulk metadata editing", "Version history tracking", "Instant format conversion"]
-    },
-    {
-      icon: Calendar,
-      title: "Social Media Scheduling",
-      desc: "Plan and automate your content distribution across all major platforms from a single, intuitive calendar.",
-      features: ["Visual content calendar", "Cross-platform previews", "Best-time-to-post AI", "Automated recurring posts"]
-    },
-    {
-      icon: Share2,
-      title: "Content Publishing",
-      desc: "Direct integration with Instagram, TikTok, LinkedIn, and X. Publish content instantly or schedule for later.",
-      features: ["Direct API publishing", "First comment automation", "Platform-specific captions", "Multi-account management"]
-    },
-    {
-      icon: BarChart3,
-      title: "Analytics & Reporting",
-      desc: "Deep-dive into your performance metrics with customizable dashboards and automated client reports.",
-      features: ["Real-time engagement tracking", "Competitor benchmarking", "White-label reports", "ROI calculation"]
-    },
-    {
-      icon: Users,
-      title: "Team Workflow Management",
-      desc: "Streamline collaboration between creators, managers, and clients with built-in approval workflows.",
-      features: ["Role-based permissions", "Client approval portals", "Internal commenting", "Task assignment"]
-    }
-  ];
-
   return (
-    <div className="min-h-screen bg-background text-text selection:bg-primary/30 overflow-x-hidden">
+    <div className="min-h-screen bg-background text-text overflow-x-hidden">
       <MarketingNavbar />
-      
-      <main className="pt-32 pb-20 px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center max-w-3xl mx-auto mb-20">
-            <motion.span 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-primary font-bold text-sm uppercase tracking-widest mb-4 block"
-            >
-              Our Services
-            </motion.span>
-            <motion.h1 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="text-5xl md:text-7xl font-black tracking-tighter mb-8 leading-[0.9]"
-            >
-              Comprehensive <span className="gradient-text">Media Operations</span> for Modern Teams.
-            </motion.h1>
-            <motion.p 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="text-xl text-white/50"
-            >
-              BMS Engage provides the infrastructure your agency needs to scale creative output without increasing overhead.
-            </motion.p>
-          </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-32">
-            {services.map((service, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="p-8 rounded-[32px] bg-card border border-white/5 hover:border-primary/30 transition-all group relative overflow-hidden"
-              >
-                <div className="absolute -right-10 -top-10 w-32 h-32 bg-primary/5 blur-3xl rounded-full group-hover:bg-primary/10 transition-all" />
-                
-                <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
-                  <service.icon size={28} />
+      {/* ── Hero ─────────────────────────────────────────────────────────────── */}
+      <section className="relative pt-36 pb-20 px-6 overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-indigo-600/8 rounded-full blur-[100px]" />
+        </div>
+        <div className="max-w-7xl mx-auto">
+          <FadeUp>
+            <span className="inline-block text-xs font-bold uppercase tracking-widest text-indigo-400 mb-4 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20">
+              Our services
+            </span>
+            <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6 leading-[1.05] text-text max-w-4xl mt-2">
+              Everything your team needs to{' '}
+              <GradientText>grow on social.</GradientText>
+            </h1>
+            <p className="text-lg md:text-xl text-text-muted leading-relaxed max-w-3xl">
+              BMS Engage provides the infrastructure your agency needs to scale creative output without increasing overhead.
+            </p>
+          </FadeUp>
+        </div>
+      </section>
+
+      {/* ── Services Grid ────────────────────────────────────────────────────── */}
+      <Section>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+          {services.map((service, i) => (
+            <FadeUp key={i} delay={i * 0.06}>
+              <div className={`group p-8 rounded-2xl bg-card border border-border ${service.border} hover:shadow-xl ${service.glow} transition-all duration-300 hover:-translate-y-1 h-full flex flex-col`}>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-400 mb-4 block">{service.label}</span>
+                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${service.gradient} border border-border flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300`}>
+                  <service.icon size={22} className="text-indigo-400" />
                 </div>
-                
-                <h3 className="text-2xl font-bold mb-4">{service.title}</h3>
-                <p className="text-white/50 text-sm leading-relaxed mb-8">
-                  {service.desc}
-                </p>
-                
-                <ul className="space-y-3 mb-8">
+                <h3 className="text-xl font-bold mb-3 text-text">{service.title}</h3>
+                <p className="text-text-muted text-sm leading-relaxed mb-6 flex-1">{service.desc}</p>
+                <ul className="space-y-2.5">
                   {service.features.map((feature, j) => (
-                    <li key={j} className="flex items-center gap-3 text-xs text-white/70">
-                      <CheckCircle2 className="text-primary" size={14} />
+                    <li key={j} className="flex items-center gap-2.5 text-xs text-text-muted">
+                      <span className="w-4 h-4 rounded-full bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center shrink-0">
+                        <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
+                          <path d="M1 3L3 5L7 1" stroke="#818cf8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </span>
                       {feature}
                     </li>
                   ))}
                 </ul>
-                
-                <Button variant="ghost" size="sm" className="group/btn p-0 hover:bg-transparent text-primary">
-                  Learn more <ArrowRight className="ml-2 group-hover/btn:translate-x-1 transition-transform" size={16} />
-                </Button>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Bottom CTA */}
-          <section className="text-center py-20 border-t border-white/5">
-            <h2 className="text-4xl font-bold mb-8">Need a custom solution?</h2>
-            <p className="text-white/40 mb-10 max-w-xl mx-auto">We offer enterprise-grade customization for large agencies and media conglomerates.</p>
-            <Button size="lg" className="h-14 px-10">
-              Talk to Our Experts
-            </Button>
-          </section>
+              </div>
+            </FadeUp>
+          ))}
         </div>
-      </main>
+      </Section>
+
+      {/* ── Enterprise CTA ───────────────────────────────────────────────────── */}
+      <Section className="bg-card/20 border-t border-border">
+        <CTABanner
+          title={<>Need a <GradientText>custom solution?</GradientText></>}
+          subtitle="We offer enterprise-grade customization for large agencies and media conglomerates. Let's talk about what you need."
+          primaryLabel="Talk to our team"
+          primaryTo="/contact"
+          secondaryLabel="Start for free"
+          secondaryTo="/register"
+        />
+      </Section>
     </div>
   );
 }

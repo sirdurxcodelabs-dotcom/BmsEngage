@@ -14,6 +14,8 @@ import { mediaService, deleteVariant } from '../../services/mediaService';
 import { startupService, Startup } from '../../services/startupService';
 import { campaignEventService, CampaignEvent } from '../../services/campaignEventService';
 import { useAuth } from '../../contexts/AuthContext';
+import { StartupSelect } from './StartupSelect';
+import { CampaignEventSelect } from './CampaignEventSelect';
 
 interface EditAssetModalProps {
   isOpen: boolean;
@@ -33,7 +35,9 @@ export const EditAssetModal = ({ isOpen, onClose, asset, onSave }: EditAssetModa
   const [campaignEvents, setCampaignEvents] = React.useState<CampaignEvent[]>([]);
 
   const isAgency = user?.activeContext === 'agency';
-  const hasStartups = isAgency && startups.length > 0 && user?.agency?.enableStartups;
+  // enableStartups: true for owner OR for team members via agencyEnableStartups
+  const startupsEnabled = isAgency && (user?.agency?.enableStartups || user?.agencyEnableStartups);
+  const hasStartups = startupsEnabled && startups.length > 0;
 
   React.useEffect(() => {
     if (isAgency) {
@@ -227,14 +231,12 @@ export const EditAssetModal = ({ isOpen, onClose, asset, onSave }: EditAssetModa
                 <label className="text-xs font-black text-text-muted uppercase tracking-widest flex items-center gap-1.5">
                   <Building2 size={11} /> Startup / Organisation <span className="text-red-400">*</span>
                 </label>
-                <div className="relative">
-                  <select value={formData.startupId} onChange={e => setFormData({ ...formData, startupId: e.target.value })} required
-                    className="w-full h-12 bg-white/5 border border-white/10 rounded-xl px-4 pr-9 text-sm font-bold text-text outline-none focus:border-primary/50 appearance-none transition-all">
-                    <option value="">— Select a startup —</option>
-                    {startups.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" size={15} />
-                </div>
+                <StartupSelect
+                  startups={startups}
+                  value={formData.startupId}
+                  onChange={id => setFormData({ ...formData, startupId: id })}
+                  required
+                />
               </div>
             )}
 
@@ -244,14 +246,11 @@ export const EditAssetModal = ({ isOpen, onClose, asset, onSave }: EditAssetModa
                 <label className="text-xs font-black text-text-muted uppercase tracking-widest flex items-center gap-1.5">
                   <Flag size={11} /> Campaign Event <span className="text-text-muted font-normal normal-case">(optional)</span>
                 </label>
-                <div className="relative">
-                  <select value={formData.campaignEventId} onChange={e => setFormData({ ...formData, campaignEventId: e.target.value })}
-                    className="w-full h-12 bg-white/5 border border-white/10 rounded-xl px-4 pr-9 text-sm font-bold text-text outline-none focus:border-primary/50 appearance-none transition-all">
-                    <option value="">None</option>
-                    {campaignEvents.map(ev => <option key={ev.id} value={ev.id}>{ev.title}</option>)}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" size={15} />
-                </div>
+                <CampaignEventSelect
+                  events={campaignEvents}
+                  value={formData.campaignEventId}
+                  onChange={id => setFormData({ ...formData, campaignEventId: id })}
+                />
               </div>
             )}
 

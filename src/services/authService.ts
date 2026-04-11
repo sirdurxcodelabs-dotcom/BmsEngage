@@ -31,6 +31,19 @@ export const getRoleGroups = (roles: UserRole[] = []): string[] => {
   return [...groups];
 };
 
+/**
+ * Returns the single role group for a given role string.
+ * Returns null if the role is not found in any group.
+ */
+export const getRoleGroup = (role: string): 'creative' | 'production' | 'marketing' | 'executive' | null => {
+  for (const [group, members] of Object.entries(ROLE_GROUPS)) {
+    if ((members as string[]).includes(role)) {
+      return group as 'creative' | 'production' | 'marketing' | 'executive';
+    }
+  }
+  return null;
+};
+
 export const checkPermission = (roles: UserRole[] = [], permission: string): boolean => {
   const allowed = PERMISSIONS[permission] ?? [];
   return getRoleGroups(roles).some(g => allowed.includes(g));
@@ -41,6 +54,7 @@ export interface NotificationPrefs {
   galleryAssets: boolean;
   postSchedule: boolean;
   systemUpdates: boolean;
+  campaignEvents: boolean;
 }
 
 export interface User {
@@ -68,6 +82,8 @@ export interface User {
   activeContext?: 'personal' | 'agency';
   // Effective role in agency context — 'owner' or an assigned agencyRole from TeamInvite
   agencyRole?: string | null;
+  // Whether the agency owner has enabled the Startups feature — available to all agency members
+  agencyEnableStartups?: boolean;
 }
 
 export interface AuthResponse {

@@ -50,7 +50,9 @@ const FEED_URLS: Record<string, string> = {
   LinkedIn: 'https://www.linkedin.com/company/linkedin/',
 };
 
-export default function PostsPage() {
+import { AccessGuard } from '../components/AccessGuard';
+
+function PostsPageInner() {
   const [activeTab, setActiveTab] = useState<string>(MOCK_ACCOUNTS[0]?.platform || '');
   const [isLoadingFeed, setIsLoadingFeed] = useState(false);
 
@@ -292,5 +294,13 @@ export default function PostsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PostsPage() {
+  return (
+    <AccessGuard feature="posts">
+      <PostsPageInner />
+    </AccessGuard>
   );
 }

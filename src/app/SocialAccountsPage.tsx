@@ -352,7 +352,9 @@ function PlatformPanel({ account }: { account: ConnectedAccount }) {
 }
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
-export default function SocialAccountsPage() {
+import { AccessGuard } from '../components/AccessGuard';
+
+function SocialAccountsPageInner() {
   const [accounts, setAccounts] = useState<ConnectedAccount[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -478,5 +480,13 @@ export default function SocialAccountsPage() {
 
       <ConnectAccountModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onConnect={() => {}} existingAccounts={[]} />
     </div>
+  );
+}
+
+export default function SocialAccountsPage() {
+  return (
+    <AccessGuard feature="social-accounts">
+      <SocialAccountsPageInner />
+    </AccessGuard>
   );
 }

@@ -9,6 +9,8 @@ import { useToast } from '../ui/Toast';
 import { mediaService } from '../../services/mediaService';
 import { useAuth } from '../../contexts/AuthContext';
 import { Startup } from '../../services/startupService';
+import { StartupSelect } from './StartupSelect';
+import { CampaignEventSelect } from './CampaignEventSelect';
 
 interface UploadMediaModalProps {
   isOpen: boolean;
@@ -60,6 +62,8 @@ export const UploadMediaModal = ({ isOpen, onClose, onUpload, parentAsset, corre
   const { toast } = useToast();
   const { user } = useAuth();
   const isAgency = user?.activeContext === 'agency';
+  // enableStartups: true for owner (user.agency.enableStartups) OR for team members (agencyEnableStartups from profile)
+  const startupsEnabled = isAgency && (user?.agency?.enableStartups || user?.agencyEnableStartups);
   const [campaignEvents, setCampaignEvents] = React.useState<any[]>([]);
 
   React.useEffect(() => {
@@ -164,7 +168,7 @@ export const UploadMediaModal = ({ isOpen, onClose, onUpload, parentAsset, corre
     if (!formData.title.trim()) { toast('Title is required', 'error'); return; }
     if (!formData.tags.trim()) { toast('At least one tag is required', 'error'); return; }
     // Startup is required for agency uploads when feature is enabled
-    if (isAgency && !parentAsset && startups.length > 0 && user?.agency?.enableStartups && !formData.startupId) {
+    if (isAgency && !parentAsset && startups.length > 0 && startupsEnabled && !formData.startupId) {
       toast('Please select a startup / organisation for this asset', 'error'); return;
     }
     // Target date is required
@@ -349,38 +353,28 @@ export const UploadMediaModal = ({ isOpen, onClose, onUpload, parentAsset, corre
             </select>
           </div>
           {/* Startup — agency context only, required when startups exist and feature is enabled */}
-          {isAgency && !parentAsset && startups.length > 0 && user?.agency?.enableStartups && (
+          {isAgency && !parentAsset && startups.length > 0 && startupsEnabled && (
             <div className="space-y-1.5 sm:col-span-2">
               <label className="text-xs font-bold text-text-muted uppercase tracking-wider">
                 Startup / Organisation <span className="text-red-400">*</span>
               </label>
-              <select
+              <StartupSelect
+                startups={startups}
                 value={formData.startupId}
-                onChange={(e) => setFormData({ ...formData, startupId: e.target.value })}
+                onChange={id => setFormData({ ...formData, startupId: id })}
                 required
-                className="w-full h-12 bg-background border border-border rounded-xl px-4 text-sm text-text outline-none focus:border-primary/50 transition-all"
-              >
-                <option value="">— Select a startup —</option>
-                {startups.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-              </select>
+              />
             </div>
           )}
           {/* Campaign Event — agency context, when not pre-filled */}
           {isAgency && !parentAsset && !campaignEventId && campaignEvents.length > 0 && (
             <div className="space-y-1.5 sm:col-span-2">
               <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Campaign Event (optional)</label>
-              <select
+              <CampaignEventSelect
+                events={campaignEvents}
                 value={formData.campaignEventId || ''}
-                onChange={(e) => setFormData({ ...formData, campaignEventId: e.target.value })}
-                className="w-full h-12 bg-background border border-border rounded-xl px-4 text-sm text-text outline-none focus:border-primary/50 transition-all"
-              >
-                <option value="">None</option>
-                {campaignEvents.map((ev: any) => (
-                  <option key={ev.id} value={ev.id}>{ev.title}</option>
-                ))}
-              </select>
+                onChange={id => setFormData({ ...formData, campaignEventId: id })}
+              />
             </div>
           )}
           {/* Target Date — required, read-only if pre-filled from campaign event */}

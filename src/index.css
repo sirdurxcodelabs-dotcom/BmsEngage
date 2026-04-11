@@ -92,3 +92,46 @@ textarea[spellcheck="true"] {
   -webkit-spell-checking: enabled;
   spell-checking: enabled;
 }
+
+/* ── Campaign marquee ticker ─────────────────────────────────────────────── */
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.marquee-track {
+  display: inline-flex;
+  animation: marquee 22s linear infinite;
+  width: max-content;
+}
+
+.marquee-track:hover {
+  animation-play-state: paused;
+}
+
+/* ── Digital marquee — big bold 3D social-media-board style ─────────────── */
+@keyframes marquee-digital {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.marquee-digital {
+  display: inline-flex;
+  align-items: center;
+  animation: marquee-digital 18s linear infinite;
+  width: max-content;
+}
+
+.marquee-digital:hover {
+  animation-play-state: paused;
+}
+
+/* ── Sidebar glow pulse ──────────────────────────────────────────────────── */
+@keyframes sidebar-glow {
+  0%, 100% { opacity: 0.4; }
+  50%       { opacity: 0.8; }
+}
+
+.sidebar-glow {
+  animation: sidebar-glow 4s ease-in-out infinite;
+}

@@ -22,13 +22,15 @@ interface PresentationViewProps {
   onClose: () => void;
   onAssetUpdate: (asset: MediaAsset) => void;
   startups?: { id: string; name: string; logo: string | null }[];
+  /** When true: Creative mode — hides approve/reject/corrections, shows only own assets */
+  isCreativeMode?: boolean;
 }
 
 type PanelTab = 'comments' | 'revisions';
 
 const EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🔥', '👏', '🎉'];
 
-export const PresentationView = ({ assets, initialIndex = 0, onClose, onAssetUpdate, startups = [] }: PresentationViewProps) => {
+export const PresentationView = ({ assets, initialIndex = 0, onClose, onAssetUpdate, startups = [], isCreativeMode = false }: PresentationViewProps) => {
   const [index, setIndex] = useState(initialIndex);
   const [panelTab, setPanelTab] = useState<PanelTab>('comments');
   const [localAssets, setLocalAssets] = useState<MediaAsset[]>(assets);
@@ -44,6 +46,11 @@ export const PresentationView = ({ assets, initialIndex = 0, onClose, onAssetUpd
   const { toast } = useToast();
   const { user } = useAuth();
   const { canComment, canRequestCorrection, canApproveAsset } = usePermissions();
+
+  // In Creative mode, override all restricted permissions regardless of role
+  const effectiveCanComment = isCreativeMode ? true : canComment;
+  const effectiveCanRequestCorrection = isCreativeMode ? false : canRequestCorrection;
+  const effectiveCanApprove = isCreativeMode ? false : canApproveAsset;
 
   const asset = localAssets[index];
 
@@ -170,9 +177,17 @@ export const PresentationView = ({ assets, initialIndex = 0, onClose, onAssetUpd
         <X size={20} />
       </button>
 
-      {/* Asset counter */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-sm text-white text-xs font-bold">
-        {index + 1} / {localAssets.length}
+      {/* Asset counter + Creative mode badge */}
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2">
+        <div className="px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-sm text-white text-xs font-bold">
+          {index + 1} / {localAssets.length}
+        </div>
+        {isCreativeMode && (
+          <div className="px-3 py-1.5 rounded-full bg-primary/80 backdrop-blur-sm text-white text-xs font-bold flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-white/80 inline-block" />
+            My Assets
+          </div>
+        )}
       </div>
 
       {/* ── Left: full-screen asset preview ─────────────────────────── */}
@@ -288,8 +303,8 @@ export const PresentationView = ({ assets, initialIndex = 0, onClose, onAssetUpd
                 {asset.approvalStatus === 'pending' ? 'Pending' : asset.approvalStatus}
               </span>
 
-              {/* Approve / Reject buttons — executives/production/marketing */}
-              {canApproveAsset && (
+              {/* Approve / Reject buttons — executives/production/marketing only */}
+              {effectiveCanApprove && (
                 <>
                   {asset.approvalStatus !== 'approved' && (
                     <button onClick={() => handleApprove('approved')} disabled={approvingStatus !== null}
@@ -318,11 +333,11 @@ export const PresentationView = ({ assets, initialIndex = 0, onClose, onAssetUpd
 
       {/* ── Right: comments + revisions panel ───────────────────────── */}
       <div className="w-full lg:w-[380px] xl:w-[420px] bg-[#0E0E11] border-t lg:border-t-0 lg:border-l border-white/10 flex flex-col max-h-[45vh] lg:max-h-none">
-        {/* Panel tabs */}
+        {/* Panel tabs — hide Revisions tab in Creative mode */}
         <div className="flex gap-1 p-3 border-b border-white/10 shrink-0">
           {([
             { key: 'comments' as PanelTab, label: 'Comments', icon: <MessageSquare size={14} />, count: asset.comments.length },
-            { key: 'revisions' as PanelTab, label: 'Revisions', icon: <AlertCircle size={14} />, count: openRevisions.length },
+            ...(!isCreativeMode ? [{ key: 'revisions' as PanelTab, label: 'Revisions', icon: <AlertCircle size={14} />, count: openRevisions.length }] : []),
           ]).map(tab => (
             <button key={tab.key} onClick={() => setPanelTab(tab.key)}
               className={cn('flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold transition-all',
@@ -386,7 +401,7 @@ export const PresentationView = ({ assets, initialIndex = 0, onClose, onAssetUpd
                         )}
                         <div className="flex items-center gap-3 mt-1.5">
                           <p className="text-[10px] text-white/30">{new Date(c.createdAt).toLocaleString()}</p>
-                          {canComment && (
+                          {effectiveCanComment && (
                             <>
                               <button onClick={() => setReplyingTo(replyingTo === c.id ? null : c.id)}
                                 className="text-[10px] text-white/40 hover:text-primary transition-colors flex items-center gap-1">
@@ -483,7 +498,7 @@ export const PresentationView = ({ assets, initialIndex = 0, onClose, onAssetUpd
 
         {/* Input area */}
         <div className="p-3 border-t border-white/10 shrink-0">
-          {panelTab === 'comments' && canComment && (
+          {panelTab === 'comments' && effectiveCanComment && (
             <div className="flex gap-2">
               <textarea
                 value={commentText}
@@ -499,7 +514,7 @@ export const PresentationView = ({ assets, initialIndex = 0, onClose, onAssetUpd
               </button>
             </div>
           )}
-          {panelTab === 'revisions' && canRequestCorrection && (
+          {panelTab === 'revisions' && effectiveCanRequestCorrection && (
             <div className="space-y-2">
               <input
                 value={correctionTimestamp}
